@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(3, 7, 18);
+  color: rgb(241, 245, 249);
+}
+
+@layer components {
+  .container-page {
+    @apply max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-lg p-6 shadow-lg;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-50 rounded-lg font-medium transition;
+  }
+}

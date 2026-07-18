@@ -1,0 +1,52 @@
+// ContentPulse Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ContentItem {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  url             String
+  category        String    // React/Frontend, Career/Productivity, Backend/APIs, AI/ML Tools, Tutorials
+  format          String    // listicle, how-to, guide, opinion, case-study
+  wordCount       Int
+  publishDate     DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  metrics         Metrics[]
+
+  @@index([publishDate])
+  @@index([category])
+}
+
+model Metrics {
+  id              String    @id @default(cuid())
+  contentItemId   String
+  contentItem     ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  // GA4-style metrics
+  pageviews       Int       @default(0)
+  sessions        Int       @default(0)
+  avgTimeOnPage   Float     @default(0)
+  bounceRate      Float     @default(0)
+  
+  // GSC metrics
+  impressions     Int       @default(0)
+  clicks          Int       @default(0)
+  ctr             Float     @default(0)
+  avgPosition     Float     @default(0)
+
+  recordDate      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  @@unique([contentItemId, recordDate])
+  @@index([contentItemId])
+  @@index([recordDate])
+}

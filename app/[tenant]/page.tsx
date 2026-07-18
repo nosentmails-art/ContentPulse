@@ -265,6 +265,7 @@ export default function TenantPage() {
             <AgentCard
               key={agent.agentType}
               {...agent}
+              detailHref={`/${tenantSlug}/agents/${agent.agentType.toLowerCase()}`}
               onToggle={() => handleAgentToggle(agent.agentType)}
               onAttributeToggle={(key) => handleAttributeToggle(agent.agentType, key)}
               onRun={() => handleRunAgent(agent.agentType)}

@@ -2,12 +2,14 @@
  * AgentCard Component
  * @author sanat.k.mahapatra
  * 
- * Displays individual agent with status, toggles, and run controls
+ * Displays individual agent with status, toggles, run controls, and navigation to detail page
  */
 
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import {
   BarChart3,
   Users,
@@ -18,6 +20,7 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 
@@ -39,6 +42,7 @@ interface AgentCardProps {
   onToggle: () => void;
   onAttributeToggle: (key: string) => void;
   onRun: () => void;
+  detailHref: string;
 }
 
 const AGENT_ICONS: Record<string, React.ReactNode> = {
@@ -63,6 +67,7 @@ export function AgentCard({
   onToggle,
   onAttributeToggle,
   onRun,
+  detailHref,
 }: AgentCardProps) {
   const [showAttributes, setShowAttributes] = useState(false);
 
@@ -70,16 +75,16 @@ export function AgentCard({
     <div className="card group">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           <div className="text-indigo-500">{AGENT_ICONS[agentType]}</div>
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-white">{name}</h3>
             <StatusBadge status={status} />
           </div>
         </div>
 
         {/* Master Toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-2 cursor-pointer ml-2">
           <input
             type="checkbox"
             checked={enabled}
@@ -136,14 +141,26 @@ export function AgentCard({
         </div>
       )}
 
-      {/* Run Button */}
-      <button
-        onClick={onRun}
-        disabled={!enabled || status === "RUNNING"}
-        className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-      >
-        {status === "RUNNING" ? "Running..." : "Run Agent"}
-      </button>
+      {/* Action Buttons */}
+      <div className="flex gap-2 mb-3">
+        {/* Run Agent Button */}
+        <button
+          onClick={onRun}
+          disabled={!enabled || status === "RUNNING"}
+          className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {status === "RUNNING" ? "Running..." : "Run Agent"}
+        </button>
+
+        {/* View Details Link */}
+        <Link
+          href={detailHref}
+          className="flex items-center justify-center px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-slate-300 hover:text-indigo-400 border border-slate-700 hover:border-indigo-500"
+          title="View agent details and run history"
+        >
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
 
       {/* Last Run Info */}
       <div className="text-xs text-slate-500">

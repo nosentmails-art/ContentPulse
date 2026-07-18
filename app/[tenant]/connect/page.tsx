@@ -105,15 +105,39 @@ export default function ConnectPage() {
                   {CHANNEL_LABELS[channel]}
                 </TabsTrigger>
               ))}
-            </TabsList>
+          {/* Connection Methods */}
+          <div className="mt-12 grid gap-4 md:grid-cols-2">
+            {/* Manual Upload Box */}
+            <div className="p-6 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-indigo-500 transition">
+              <h3 className="font-semibold text-white mb-2">📤 Manual Upload</h3>
+              <p className="text-slate-300 mb-4 text-sm">
+                Upload CSV or Excel files from your platforms using the tabs above. Best for testing and one-time imports.
+              </p>
+              <Link href={`/${tenantSlug}`} className="text-indigo-400 hover:text-indigo-300 font-medium text-sm">
+                Go to Agent Dashboard →
+              </Link>
+            </div>
 
-            {CHANNELS.map((channel) => (
-              <TabsContent key={channel} value={channel} className="card">
-                <ChannelUploadTab
-                  channel={channel}
-                  status={channelStatus[channel].status}
-                  rowCount={channelStatus[channel].rowCount}
-                  lastImport={channelStatus[channel].lastImport}
+            {/* API Connection Box - Coming Soon */}
+            <div className="p-6 bg-slate-800/50 rounded-lg border border-slate-700 opacity-60 relative">
+              <div className="absolute top-2 right-2">
+                <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs font-semibold rounded">
+                  Coming Soon
+                </span>
+              </div>
+              <h3 className="font-semibold text-white mb-2">🔗 Connect via API</h3>
+              <p className="text-slate-300 mb-4 text-sm">
+                Direct integrations with LinkedIn, YouTube, Reddit, and more. Automatic daily syncs coming soon.
+              </p>
+              <button
+                disabled
+                className="text-slate-500 font-medium text-sm cursor-not-allowed"
+              >
+                Configure API Connections
+              </button>
+            </div>
+          </div>
+
                   onFileUpload={(file) => handleFileUpload(channel, file)}
                   onTemplateDownload={() => handleTemplateDownload(channel)}
                 />

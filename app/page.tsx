@@ -1,0 +1,107 @@
+/**
+ * Landing Page
+ * @author sanat.k.mahapatra
+ * 
+ * Home page with hero, features, and CTA
+ */
+
+import Link from "next/link";
+import { BarChart3, Zap, FileText, ArrowRight } from "lucide-react";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Hero Section */}
+      <section className="container-page py-20 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+            Turn Content Data Into{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+              Editorial Intelligence
+            </span>
+          </h1>
+
+          <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
+            ContentPulse orchestrates AI agents to analyze your multi-channel content, 
+            identify patterns, and deliver actionable insights your team can act on immediately.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/devinsights"
+              className="btn-primary inline-flex items-center justify-center gap-2 text-lg px-8 py-3"
+            >
+              View Demo <ArrowRight className="w-5 h-5" />
+            </Link>
+            <a
+              href="#features"
+              className="btn-secondary inline-flex items-center justify-center gap-2 text-lg px-8 py-3"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="container-page py-20 border-t border-slate-800">
+        <h2 className="text-3xl font-bold text-white text-center mb-12">
+          Multi-Tenant, Multi-Agent Intelligence
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {[
+            {
+              icon: BarChart3,
+              title: "Multi-Channel Analysis",
+              description:
+                "Aggregate and analyze content performance across LinkedIn, YouTube, Blog, Email, Reddit, and more.",
+            },
+            {
+              icon: Zap,
+              title: "AI Agent Orchestration",
+              description:
+                "Deploy specialized agents for audience intelligence, gap analysis, sentiment, competitors, and opportunities.",
+            },
+            {
+              icon: FileText,
+              title: "Actionable Reports",
+              description:
+                "Generate comprehensive intelligence reports with specific recommendations your team can execute.",
+            },
+          ].map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <div key={i} className="card text-center">
+                <Icon className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
+                <p className="text-slate-400">{feature.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container-page py-20 border-t border-slate-800">
+        <div className="bg-gradient-to-r from-indigo-900 to-violet-900 rounded-xl p-12 text-center border border-indigo-800 max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Transform Your Content Strategy?
+          </h2>
+          <p className="text-indigo-100 mb-8">
+            Start with our demo workspace and see how AI-powered content intelligence
+            can guide your editorial decisions.
+          </p>
+          <Link href="/devinsights" className="btn-primary inline-flex items-center gap-2">
+            Explore Demo <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm">
+        <p>&copy; 2024 ContentPulse. Multi-tenant content intelligence platform.</p>
+      </footer>
+    </div>
+  );
+}

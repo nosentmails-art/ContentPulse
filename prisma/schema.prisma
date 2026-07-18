@@ -1,5 +1,5 @@
-// This is a placeholder schema for the backend team to complete
-// Frontend does not require actual Prisma models for development
+// ContentPulse Prisma Schema
+// Multi-tenant, multi-agent content intelligence platform
 
 datasource db {
   provider = "sqlite"
@@ -10,11 +10,122 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Backend team will add actual models here:
-// - Organization (multi-tenant)
-// - User
-// - ContentItem
-// - Metrics
-// - Agent configurations
-// - Run history
-// etc.
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g., "DevInsights Blog"
+  slug      String   @unique // e.g., "devinsights"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agents              Agent[]
+  contentItems        ContentItem[]
+  channelMetrics      ChannelMetrics[]
+  competitors         Competitor[]
+
+  @@index([slug])
+}
+
+model Agent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  type      String   // AgentType enum value (stored as string for SQLite compatibility)
+  status    String   @default("ENABLED") // AgentStatus enum value
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  attributes AgentAttribute[]
+  runs       AgentRun[]
+
+  @@unique([tenantId, type])
+  @@index([tenantId])
+}
+
+model AgentAttribute {
+  id        String   @id @default(cuid())
+  agentId   String
+  key       String   // e.g., "include_sentiment", "focus_on_trending"
+  label     String   // e.g., "Include Sentiment Analysis"
+  value     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, key])
+  @@index([agentId])
+}
+
+model AgentRun {
+  id        String   @id @default(cuid())
+  agentId   String
+  status    String   @default("pending") // pending, running, completed, failed
+  result    String?  // JSON string with analysis results
+  error     String?
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([status])
+}
+
+model ContentItem {
+  id        String   @id @default(cuid())
+  tenantId  String
+  channel   String   // Channel enum value (stored as string for SQLite compatibility)
+  title     String
+  url       String?
+  metrics   String   // JSON string: views, likes, comments, engagement_rate, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([channel])
+}
+
+model ChannelMetrics {
+  id        String   @id @default(cuid())
+  tenantId  String
+  channel   String   // Channel enum value (stored as string for SQLite compatibility)
+  period    String   // e.g., "2024-01", "2024-W01"
+  data      String   // JSON string: total_posts, avg_engagement, reach, impressions, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, channel, period])
+  @@index([tenantId])
+  @@index([channel])
+}
+
+model Competitor {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  url       String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}

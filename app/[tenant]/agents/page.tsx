@@ -202,7 +202,7 @@ export default function AgentsIndexPage() {
             {filteredAgents.map((agent) => (
               <Link
                 key={agent.id}
-                href={`/${tenantSlug}/agents/${agent.agentType}`}
+                href={`/${tenantSlug}/agents/${agent.agentType.toLowerCase()}`}
                 className="card group hover:border-indigo-500 transition cursor-pointer"
               >
                 {/* Agent Header */}

@@ -1,20 +1,114 @@
-// This is a placeholder schema for the backend team to complete
-// Frontend does not require actual Prisma models for development
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-
-generator client {
-  provider = "prisma-client-js"
+model Tenant {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  website       String?
+  niche         String?
+  createdAt     DateTime      @default(now())
+  agents        Agent[]
+  contentItems  ContentItem[]
+  competitors   Competitor[]
 }
 
-// Backend team will add actual models here:
-// - Organization (multi-tenant)
-// - User
-// - ContentItem
-// - Metrics
-// - Agent configurations
-// - Run history
-// etc.
+model Agent {
+  id          String           @id @default(cuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  type        String           // AgentType as string
+  name        String
+  description String
+  enabled     Boolean          @default(true)
+  status      String           @default("IDLE") // AgentStatus as string
+  lastRun     DateTime?
+  attributes  AgentAttribute[]
+  runs        AgentRun[]
+  @@unique([tenantId, type])
+}
+
+model AgentAttribute {
+  id          String  @id @default(cuid())
+  agentId     String
+  agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  key         String
+  label       String
+  description String?
+  enabled     Boolean @default(true)
+}
+
+model AgentRun {
+  id            String      @id @default(cuid())
+  agentId       String
+  agent         Agent       @relation(fields: [agentId], references: [id])
+  status        String      // AgentStatus as string
+  startedAt     DateTime    @default(now())
+  completedAt   DateTime?
+  logs          String?
+  resultJson    String?
+}
+
+model ContentItem {
+  id          String          @id @default(cuid())
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  channel     String          // Channel as string
+  url         String?         // For deduplication (LinkedIn post URL, YouTube video URL, etc.)
+  title       String?
+  contentType String?
+  publishDate DateTime?
+  rawData     String
+  metrics     ChannelMetrics?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+}
+
+model ChannelMetrics {
+  id                  String      @id @default(cuid())
+  contentItemId       String      @unique
+  contentItem         ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  impressions         Float?
+  reach               Float?
+  clicks              Float?
+  ctr                 Float?
+  likes               Float?
+  comments            Float?
+  shares              Float?
+  followerGrowth      Float?
+  views               Float?
+  watchTime           Float?
+  avgViewDuration     Float?
+  subscribersGained   Float?
+  sessions            Float?
+  timeOnPage          Float?
+  bounceRate          Float?
+  conversions         Float?
+  searchTraffic       Float?
+  wordCount           Int?
+  openRate            Float?
+  unsubscribes        Float?
+  leadsGenerated      Float?
+  upvotes             Float?
+  mentionFrequency    Float?
+  trendVelocity       Float?
+  cpc                 Float?
+  costPerConversion   Float?
+  commentText         String?
+}
+
+model Competitor {
+  id        String  @id @default(cuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  name      String
+  url       String
+  niche     String?
+  isAuto    Boolean @default(false)
+  rawData   String?
+}

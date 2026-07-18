@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '../../../../lib/db';
+
+/**
+ * GET /api/[slug]/report
+ * Returns aggregated report from latest completed AgentRun for each agent
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const { slug } = params;
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
+    if (!tenant) return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+
+    const agents = await prisma.agent.findMany({
+      where: { tenantId: tenant.id },
+      include: { runs: { where: { status: 'COMPLETED' }, orderBy: { completedAt: 'desc' }, take: 1 } },
+    });
+
+    const agentsReport = agents
+      .filter((agent) => agent.runs.length > 0)
+      .map((agent) => {
+        const latestRun = agent.runs[0];
+        const result = latestRun.resultJson ? JSON.parse(latestRun.resultJson) : null;
+        return { type: agent.type, name: agent.name, status: 'COMPLETED', lastRun: latestRun.completedAt, result };
+      });
+
+    return NextResponse.json({ tenant: { slug: tenant.slug, name: tenant.name }, agents: agentsReport, generatedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error('Error in GET /api/[slug]/report:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

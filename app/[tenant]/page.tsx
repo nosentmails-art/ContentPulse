@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Play, Loader2 } from "lucide-react";
@@ -15,8 +15,16 @@ import { AgentCard } from "@/components/AgentCard";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { toast } from "sonner";
 
+type AgentStatus = "IDLE" | "RUNNING" | "COMPLETED" | "ERROR";
+type MockAgent = {
+  agentType: string; name: string; description: string;
+  status: AgentStatus; enabled: boolean;
+  lastRun: string | null; resultPreview: string | null;
+  attributes: { key: string; label: string; enabled: boolean }[];
+};
+
 // Mock data while backend isn't ready
-const MOCK_AGENTS = [
+const MOCK_AGENTS: MockAgent[] = [
   {
     agentType: "CONTENT_ANALYTICS",
     name: "Content Analytics",
@@ -114,9 +122,8 @@ const MOCK_AGENTS = [
 ];
 
 const MOCK_TENANTS = [
-  { id: "1", name: "DevInsights", slug: "devinsights" },
-  { id: "2", name: "MarketingHub", slug: "marketinghub" },
-  { id: "3", name: "SaaS Content", slug: "saas-content" },
+  { id: "1", name: "DevInsights Blog", slug: "devinsights" },
+  { id: "2", name: "GrowthStack Weekly", slug: "growthstack" },
 ];
 
 export default function TenantPage() {

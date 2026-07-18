@@ -36,7 +36,7 @@ const MOCK_REPORT_DATA = {
         "How-to": { LinkedIn: 8.2, YouTube: 9.1, Blog: 7.5 },
         Tutorial: { LinkedIn: 6.5, YouTube: 9.8, Blog: 8.2 },
         Opinion: { LinkedIn: 7.9, YouTube: 5.2, Blog: 6.8 },
-        Case Study: { LinkedIn: 9.1, YouTube: 7.3, Blog: 8.9 },
+        "Case Study": { LinkedIn: 9.1, YouTube: 7.3, Blog: 8.9 },
       },
     },
   },

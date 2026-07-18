@@ -138,6 +138,7 @@ export default function AgentDetailPage() {
   const agent = AGENT_DETAILS[agentType];
   const [attributes, setAttributes] = useState(agent?.attributes || []);
   const [running, setRunning] = useState(false);
+  const [agentStatus, setAgentStatus] = useState<"IDLE" | "RUNNING" | "COMPLETED" | "ERROR">("IDLE");
 
   if (!agent) {
     return (
@@ -160,9 +161,11 @@ export default function AgentDetailPage() {
 
   const handleRun = () => {
     setRunning(true);
+    setAgentStatus("RUNNING");
     toast.loading("Running agent...");
     setTimeout(() => {
       setRunning(false);
+      setAgentStatus("COMPLETED");
       toast.success("Agent completed");
     }, 3000);
   };
@@ -189,7 +192,7 @@ export default function AgentDetailPage() {
               <h2 className="text-3xl font-bold text-white mb-2">{agent.name}</h2>
               <p className="text-slate-400">{agent.description}</p>
             </div>
-            <StatusBadge status="COMPLETED" />
+            <StatusBadge status={agentStatus} />
           </div>
 
           <button

@@ -1,0 +1,20 @@
+// This is a placeholder schema for the backend team to complete
+// Frontend does not require actual Prisma models for development
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Backend team will add actual models here:
+// - Organization (multi-tenant)
+// - User
+// - ContentItem
+// - Metrics
+// - Agent configurations
+// - Run history
+// etc.

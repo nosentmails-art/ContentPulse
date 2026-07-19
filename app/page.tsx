@@ -42,6 +42,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How it works */}
+      <section className="container-page py-12 border-t border-slate-800">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">How ContentPulse Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { step: "1", title: "Connect your content channels", desc: "Link your blog, LinkedIn, YouTube, email, and more." },
+              { step: "2", title: "Run AI analysis", desc: "Five AI agents analyze audience, channels, sentiment, gaps, and competitors." },
+              { step: "3", title: "Get your content plan", desc: "Receive a prioritized report with your next 3 moves." },
+            ].map((s) => (
+              <div key={s.step} className="card text-center">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold mx-auto mb-4">{s.step}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                <p className="text-slate-400">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="container-page py-20 border-t border-slate-800">
         <h2 className="text-3xl font-bold text-white text-center mb-12">

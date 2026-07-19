@@ -39,6 +39,7 @@ interface AgentCardProps {
   attributes: Attribute[];
   lastRun: string | null;
   resultPreview: string | null;
+  isRunningAll?: boolean;
   onToggle: () => void;
   onAttributeToggle: (key: string) => void;
   onRun: () => void;
@@ -64,6 +65,7 @@ export function AgentCard({
   attributes,
   lastRun,
   resultPreview,
+  isRunningAll,
   onToggle,
   onAttributeToggle,
   onRun,
@@ -146,7 +148,7 @@ export function AgentCard({
         {/* Run Agent Button */}
         <button
           onClick={onRun}
-          disabled={!enabled || status === "RUNNING"}
+          disabled={!enabled || status === "RUNNING" || isRunningAll}
           className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {status === "RUNNING" ? "Analyzing..." : "Analyze"}

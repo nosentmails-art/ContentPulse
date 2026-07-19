@@ -11,6 +11,7 @@ interface ReportSectionProps {
   title: string;
   data: any;
   status: string;
+  source?: string;
 }
 
 const agentNames: Record<string, string> = {
@@ -272,7 +273,7 @@ function renderCompetitorAnalysis(data: any): React.ReactNode {
   );
 }
 
-export function ReportSection({ agentType, title, data, status }: ReportSectionProps) {
+export function ReportSection({ agentType, title, data, status, source }: ReportSectionProps) {
   if (!data || status !== "COMPLETED") {
     return (
       <div className="card text-center py-8">
@@ -287,7 +288,14 @@ export function ReportSection({ agentType, title, data, status }: ReportSectionP
 
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold text-white mb-6">{title}</h2>
+      <div className="flex items-start justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        {source && (
+          <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">
+            {source}
+          </span>
+        )}
+      </div>
       <div className="space-y-4">{content}</div>
     </div>
   );

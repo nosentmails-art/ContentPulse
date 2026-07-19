@@ -206,7 +206,7 @@ export default function ReportPage() {
         {/* Synthesis */}
         {reportData?.synthesis && (
           <div className="card bg-indigo-900/20 border-indigo-500/30">
-            <h2 className="text-2xl font-bold text-white mb-4">Strategic Summary</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Your Next 3 Moves</h2>
             <p className="text-slate-300 mb-4">{reportData.synthesis.acquisitionStrategy}</p>
             {reportData.synthesis.nextActions?.length > 0 && (
               <div className="mb-4">
@@ -233,38 +233,54 @@ export default function ReportPage() {
 
         {/* Sections */}
         <div className="space-y-8">
-          {/* Sentiment Analysis */}
-          {reportData?.SENTIMENT_ANALYSIS?.status === "COMPLETED" && (
-            <SentimentScoreCard
-              score={reportData?.SENTIMENT_ANALYSIS?.data?.overallScore}
-              label={reportData?.SENTIMENT_ANALYSIS?.data?.overallLabel}
-              positiveThemes={reportData?.SENTIMENT_ANALYSIS?.data?.positiveThemes || []}
-              negativeThemes={reportData?.SENTIMENT_ANALYSIS?.data?.negativeThemes || []}
+          {/* Opportunities */}
+          {reportData?.OPPORTUNITY_IDENTIFICATION?.status === "COMPLETED" ? (
+            <div className="card">
+              <div className="flex items-start justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Recommended Content Opportunities</h2>
+                <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">AI-generated analysis</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {reportData?.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
+                  (opp: any, i: number) => (
+                    <OpportunityCard key={i} {...opp} />
+                  )
+                )}
+              </div>
+            </div>
+          ) : (
+            <ReportSection
+              agentType="OPPORTUNITY_IDENTIFICATION"
+              title="Recommended Content Opportunities"
+              data={reportData?.OPPORTUNITY_IDENTIFICATION?.data}
+              status={reportData?.OPPORTUNITY_IDENTIFICATION?.status || "PENDING"}
+              source="AI-generated analysis"
             />
           )}
 
-          {/* Opportunities */}
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-6">
-              🎯 Recommended Content Opportunities
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reportData?.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
-                (opp: any, i: number) => (
-                  <OpportunityCard key={i} {...opp} />
-                )
-              ) || []}
-
+          {/* Sentiment Analysis */}
+          {reportData?.SENTIMENT_ANALYSIS?.status === "COMPLETED" ? (
+            <div className="card">
+              <div className="flex items-start justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Sentiment Analysis</h2>
+                <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">AI-generated analysis</span>
+              </div>
+              <SentimentScoreCard
+                score={reportData?.SENTIMENT_ANALYSIS?.data?.overallScore}
+                label={reportData?.SENTIMENT_ANALYSIS?.data?.overallLabel}
+                positiveThemes={reportData?.SENTIMENT_ANALYSIS?.data?.positiveThemes || []}
+                negativeThemes={reportData?.SENTIMENT_ANALYSIS?.data?.negativeThemes || []}
+              />
             </div>
-          </div>
-
-          {/* Content Analytics */}
-          <ReportSection
-            agentType="CONTENT_ANALYTICS"
-            title="Content Performance Overview"
-            data={reportData?.CONTENT_ANALYTICS?.data}
-            status={reportData?.CONTENT_ANALYTICS?.status || "PENDING"}
-          />
+          ) : (
+            <ReportSection
+              agentType="SENTIMENT_ANALYSIS"
+              title="Sentiment Analysis"
+              data={reportData?.SENTIMENT_ANALYSIS?.data}
+              status={reportData?.SENTIMENT_ANALYSIS?.status || "PENDING"}
+              source="AI-generated analysis"
+            />
+          )}
 
           {/* Audience Intelligence */}
           <ReportSection
@@ -272,6 +288,7 @@ export default function ReportPage() {
             title="Audience Insights"
             data={reportData?.AUDIENCE_INTELLIGENCE?.data}
             status={reportData?.AUDIENCE_INTELLIGENCE?.status || "PENDING"}
+            source="AI-generated analysis"
           />
 
           {/* Channel Intelligence */}
@@ -280,6 +297,7 @@ export default function ReportPage() {
             title="Channel & Content Performance Matrix"
             data={reportData?.CHANNEL_CONTENT_INTELLIGENCE?.data}
             status={reportData?.CHANNEL_CONTENT_INTELLIGENCE?.status || "PENDING"}
+            source="AI-generated analysis"
           />
 
           {/* Gap Analysis */}
@@ -288,6 +306,7 @@ export default function ReportPage() {
             title="Content Gaps & Opportunities"
             data={reportData?.GAP_ANALYSIS?.data}
             status={reportData?.GAP_ANALYSIS?.status || "PENDING"}
+            source="Rule-based from seeded data"
           />
 
           {/* Competitor Analysis */}
@@ -296,6 +315,16 @@ export default function ReportPage() {
             title="What Your Competitors Are Publishing"
             data={reportData?.COMPETITOR_ANALYSIS?.data}
             status={reportData?.COMPETITOR_ANALYSIS?.status || "PENDING"}
+            source="AI-generated analysis"
+          />
+
+          {/* Content Analytics */}
+          <ReportSection
+            agentType="CONTENT_ANALYTICS"
+            title="Content Performance Overview"
+            data={reportData?.CONTENT_ANALYTICS?.data}
+            status={reportData?.CONTENT_ANALYTICS?.status || "PENDING"}
+            source="Rule-based from seeded data"
           />
         </div>
 

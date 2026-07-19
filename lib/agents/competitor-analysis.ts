@@ -91,6 +91,25 @@ async function buildDataSummary(
       if (competitor.niche) {
         summary += `    Niche: ${competitor.niche}\n`;
       }
+      if (competitor.rawData) {
+        try {
+          const raw = JSON.parse(competitor.rawData);
+          if (raw.estimatedMonthlyPosts) {
+            summary += `    Estimated monthly posts: ${raw.estimatedMonthlyPosts}\n`;
+          }
+          if (raw.topTopics?.length) {
+            summary += `    Top topics: ${raw.topTopics.join(', ')}\n`;
+          }
+          if (raw.strengths?.length) {
+            summary += `    Key strengths: ${raw.strengths.join(', ')}\n`;
+          }
+          if (raw.audienceSize) {
+            summary += `    Estimated audience: ${raw.audienceSize}\n`;
+          }
+        } catch {
+          // ignore malformed rawData
+        }
+      }
     }
   } else {
     summary += '\nNO COMPETITORS TRACKED - Unable to perform comparative analysis.\n';

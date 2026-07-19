@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Play, Loader2 } from "lucide-react";
+import { Play, Loader2, X } from "lucide-react";
 import { AgentCard } from "@/components/AgentCard";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { toast } from "sonner";
@@ -42,6 +42,9 @@ export default function TenantPage() {
   const [loading, setLoading] = useState(false);
   const [runningAgents, setRunningAgents] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [runningAgent, setRunningAgent] = useState<string | null>(null);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [showBanner, setShowBanner] = useState(true);
 
   // Fetch agents on mount
   useEffect(() => {
@@ -128,10 +131,15 @@ export default function TenantPage() {
   const handleRunAllEnabled = async () => {
     const enabledAgents = agents.filter((a) => a.enabled);
     setLoading(true);
-    const id = toast.loading(`Analyzing ${enabledAgents.length} items...`);
+    setCompletedCount(0);
+    setRunningAgent(null);
+    const id = toast.loading("Starting content plan analysis...");
 
     try {
-      for (const agent of enabledAgents) {
+      for (let i = 0; i < enabledAgents.length; i++) {
+        const agent = enabledAgents[i];
+        setRunningAgent(agent.name);
+        setCompletedCount(i + 1);
         setRunningAgents((prev) => new Set([...prev, agent.type]));
         try {
           await fetch(`/api/${tenantSlug}/agents/${agent.type.toLowerCase()}/run`, {
@@ -140,7 +148,7 @@ export default function TenantPage() {
           const updated = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
           setAgents(updated.agents ?? []);
         } catch (e) {
-          toast.error(`${agent.type} failed`);
+          toast.error(`${agent.name} failed`);
         } finally {
           setRunningAgents((prev) => {
             const next = new Set(prev);
@@ -149,23 +157,38 @@ export default function TenantPage() {
           });
         }
       }
+      setCompletedCount(enabledAgents.length);
+      setRunningAgent(null);
       setLoading(false);
       toast.dismiss(id);
-      toast.success("All analyses complete");
+      toast.success("Content plan ready");
     } catch (error) {
       console.error("Error running all agents:", error);
       toast.dismiss(id);
       toast.error("Failed to complete all analyses");
       setLoading(false);
+      setRunningAgent(null);
     }
   };
+
+  const enabledAgentCount = agents.filter((a) => a.enabled).length;
+  const allComplete =
+    enabledAgentCount > 0 &&
+    agents.filter((a) => a.enabled).every((a) => a.latestRun?.status === "COMPLETED");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Top Bar */}
       <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container-page flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">ContentPulse</h1>
+          <Link href={`/${tenantSlug}`} className="text-2xl font-bold text-white hover:text-indigo-400 transition">
+            ContentPulse
+          </Link>
+          <nav className="hidden sm:flex items-center gap-6 text-sm">
+            <Link href={`/${tenantSlug}`} className="text-slate-300 hover:text-indigo-400 transition">Dashboard</Link>
+            <Link href={`/${tenantSlug}/report`} className="text-slate-300 hover:text-indigo-400 transition">Content Plan</Link>
+            <Link href={`/${tenantSlug}/connect`} className="text-slate-300 hover:text-indigo-400 transition">Connect Data</Link>
+          </nav>
           <TenantSwitcher tenants={tenants} currentSlug={tenantSlug} />
         </div>
       </div>
@@ -180,25 +203,50 @@ export default function TenantPage() {
           </p>
         </div>
 
+        {/* Onboarding Banner */}
+        {showBanner && (
+          <div className="mb-6 p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-lg flex items-start justify-between">
+            <p className="text-indigo-100">
+              This is a demo tenant. Click <strong>Generate Content Plan</strong> to run the AI agents on demo data.
+            </p>
+            <button
+              onClick={() => setShowBanner(false)}
+              className="text-indigo-300 hover:text-white ml-4"
+              aria-label="Close banner"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
         {/* Run All Button */}
-        <div className="mb-8 flex justify-end">
-          <button
-            onClick={handleRunAllEnabled}
-            disabled={loading}
-            className="btn-primary flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                Analyze Now
-              </>
-            )}
-          </button>
+        <div className="mb-8">
+          {!loading && allComplete ? (
+            <Link
+              href={`/${tenantSlug}/report`}
+              className="btn-primary inline-flex items-center justify-center gap-2"
+            >
+              View Content Plan
+            </Link>
+          ) : (
+            <button
+              onClick={handleRunAllEnabled}
+              disabled={loading || agents.length === 0}
+              className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {runningAgent ? `Analyzing ${runningAgent}... (${completedCount}/${enabledAgentCount})` : "Starting analysis..."}
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4" />
+                  Generate Content Plan
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Agent Grid */}
@@ -222,6 +270,7 @@ export default function TenantPage() {
               onToggle={() => handleAgentToggle(agent.type)}
               onAttributeToggle={(key) => handleAttributeToggle(agent.type, key)}
               onRun={() => handleRunAgent(agent.type)}
+              isRunningAll={loading}
             />
           ))}
         </div>

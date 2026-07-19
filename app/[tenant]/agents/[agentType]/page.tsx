@@ -108,6 +108,7 @@ export default function AgentDetailPage() {
   const [running, setRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<"IDLE" | "RUNNING" | "COMPLETED" | "ERROR">("IDLE");
   const [loading, setLoading] = useState(true);
+  const [selectedRun, setSelectedRun] = useState<any>(null);
 
   // Fetch agent data on mount
   useEffect(() => {
@@ -242,14 +243,26 @@ export default function AgentDetailPage() {
         </div>
 
         {/* Latest Result */}
-        {agentData?.latestRun?.resultJson && (
+        {(selectedRun || agentData?.latestRun?.resultJson) && (
           <div className="card mb-8">
-            <h3 className="text-xl font-bold text-white mb-6">Latest Result</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">
+                {selectedRun ? `Result from ${new Date(selectedRun.startedAt).toLocaleString()}` : 'Latest Result'}
+              </h3>
+              {selectedRun && (
+                <button 
+                  onClick={() => setSelectedRun(null)}
+                  className="text-slate-400 hover:text-white text-sm"
+                >
+                  Back to Latest
+                </button>
+              )}
+            </div>
             <ReportSection
               agentType={agentTypeParam}
               title="Analysis Output"
-              data={JSON.parse(agentData.latestRun.resultJson)}
-              status={agentData.latestRun.status || "COMPLETED"}
+              data={JSON.parse(selectedRun?.resultJson || agentData?.latestRun?.resultJson)}
+              status={selectedRun?.status || agentData?.latestRun?.status || "COMPLETED"}
               source="AI-generated analysis"
             />
           </div>
@@ -279,7 +292,10 @@ export default function AgentDetailPage() {
                       </td>
                       <td className="py-3 px-4">
                         {run.status === "COMPLETED" && (
-                          <button className="text-indigo-400 hover:text-indigo-300 text-sm">
+                          <button 
+                            onClick={() => setSelectedRun(run)}
+                            className="text-indigo-400 hover:text-indigo-300 text-sm"
+                          >
                             View Result
                           </button>
                         )}

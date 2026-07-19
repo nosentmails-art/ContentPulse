@@ -106,7 +106,12 @@ function buildChannelStats(items: ContentWithMetrics[]): ChannelStats {
     const metrics = item.metrics || {};
     const reach = reachFor(item);
     const engagement = engagementFor(item);
-    const contentType = item.contentType || 'Unknown';
+    let contentType = item.contentType || 'Unknown';
+    
+    // Change LinkedIn 'text' to 'post' for display
+    if (contentType === 'text' && item.channel === 'LINKEDIN') {
+      contentType = 'post';
+    }
 
     totalReach += reach;
     totalEngagement += engagement;

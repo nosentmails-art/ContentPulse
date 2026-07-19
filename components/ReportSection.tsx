@@ -262,46 +262,6 @@ function renderAudienceIntelligence(data: any): React.ReactNode {
         </div>
       )}
 
-      {data.observedSegments && data.observedSegments.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Observed Audience Segments</h3>
-          <div className="space-y-3">
-            {data.observedSegments.map((segment: any, idx: number) => (
-              <div key={idx} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <p className="font-semibold text-white">{segment.segmentName}</p>
-                    <p className="text-xs text-slate-400">{segment.segmentType}</p>
-                  </div>
-                  <span className="px-3 py-1 rounded text-xs font-semibold bg-indigo-500/20 text-indigo-300">
-                    {segment.confidence} confidence
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                  <div>
-                    <p className="text-slate-400">Current Engagement</p>
-                    <p className="text-white">{segment.currentEngagement}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400">Engagement Rate</p>
-                    <p className="text-white">{segment.currentEngagementRate}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400">Content Types</p>
-                    <p className="text-white">{segment.contentTypesEngagingWith?.join(", ") || "Not available"}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400">Top Channels</p>
-                    <p className="text-white">{segment.topChannels?.join(", ") || "Not available"}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-400 mt-3">{segment.whyThisSegmentExists}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {data.demographicInsights && data.demographicInsights.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold text-slate-300 mb-4">Demographic Signals</h3>

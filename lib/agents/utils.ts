@@ -4,7 +4,7 @@
 
 /**
  * Standard engagement calculation - consistent across all agents
- * Includes: likes, comments, shares, upvotes, clicks, conversions, leads, subscribers
+ * Includes: likes, comments, shares, upvotes, clicks, conversions, leads, subscribers, openRate, ctr, trendVelocity, mentionFrequency
  */
 export function calculateEngagement(metrics: any): number {
   if (!metrics) return 0;
@@ -17,7 +17,11 @@ export function calculateEngagement(metrics: any): number {
     (metrics.clicks || 0) +
     (metrics.conversions || 0) +
     (metrics.leadsGenerated || 0) +
-    (metrics.subscribersGained || 0)
+    (metrics.subscribersGained || 0) +
+    (metrics.openRate || 0) +
+    (metrics.ctr || 0) +
+    (metrics.trendVelocity || 0) +
+    (metrics.mentionFrequency || 0)
   );
 }
 

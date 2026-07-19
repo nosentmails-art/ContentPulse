@@ -197,7 +197,7 @@ export default function TenantPage() {
       <div className="container-page py-12">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-4xl font-bold text-white mb-2">Your Content Command Center</h2>
+          <h2 className="text-4xl font-bold text-white mb-2">Content Intelligence Hub</h2>
           <p className="text-slate-400">
             Select what to analyze, then run it in one click.
           </p>

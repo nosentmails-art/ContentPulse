@@ -178,6 +178,244 @@ async function main() {
     await createAgentsForTenant(tenant.id);
   }
 
+  // Helper function to create content for a tenant
+  const createContentForTenant = async (tenantId: string, tenantSlug: string) => {
+    console.log(`Seeding content for ${tenantSlug}...`);
+
+    const linkedinTitles = [
+      'AI-Powered Developer Tools: The Future of Coding',
+      '5 Cloud Architecture Patterns Every Engineer Should Know',
+      'DevOps Best Practices for 2024',
+      'Machine Learning in Production: Real-World Challenges',
+      'API Design: REST vs GraphQL vs gRPC',
+      'Kubernetes Security: Essential Checklist',
+      'Why Your Development Team Needs Better Monitoring',
+      'Microservices: When to Use and When to Avoid',
+      'Growth Hacking for B2B SaaS Companies',
+      'Understanding Database Scalability Trade-offs',
+      'Performance Optimization: Quick Wins for Your App',
+      'The Rise of Serverless Architecture',
+      'Building Resilient Systems: Failure Modes and Recovery',
+      'Data Engineering Trends 2024',
+      'AI/ML Integration: Practical Implementation Guide',
+      'Cloud Cost Optimization Strategies',
+      'Security First: Building Threat-Resilient Applications',
+      'Growth Metrics That Actually Matter',
+      'Technical Debt: Causes and Solutions',
+      'Modern Authentication: OAuth 2.0 and Beyond',
+      'Docker vs Kubernetes: When to Use Which',
+      'Building Event-Driven Microservices',
+      'GraphQL Federation: A Complete Guide',
+      'React Server Components: The Future',
+      'TypeScript 5.0: New Features Explained',
+      'Next.js 14: App Router Deep Dive',
+      'Vue 3 Composition API Best Practices',
+      'Angular Signals: A New Era',
+      'SvelteKit: Full-Stack Framework',
+      'Remix vs Next.js: Comparison',
+      'Tauri vs Electron: Desktop Apps',
+      'Rust for JavaScript Developers',
+      'Go vs Node.js: Backend Performance',
+      'Python vs JavaScript: AI Development',
+      'TensorFlow.js: ML in the Browser',
+      'WebAssembly: The Future of Web',
+      'WebGPU: Graphics Acceleration',
+      'WebRTC: Real-Time Communication',
+      'WebSockets vs Server-Sent Events',
+      'Service Workers: Offline First',
+      'Progressive Web Apps: Complete Guide',
+      'WebAuthn: Passwordless Authentication',
+      'Content Security Policy: Security Guide',
+      'CORS: Understanding Cross-Origin',
+      'HTTP/3: The Future of Web',
+      'QUIC Protocol: UDP-Based Transport',
+      'TLS 1.3: Security Improvements',
+      'DNS over HTTPS: Privacy First',
+      'IPv6: The Next Generation',
+      'Edge Computing: Distributed Processing',
+      'CDN Strategies: Global Performance',
+      'Load Balancing: Algorithms Guide',
+      'Caching Strategies: Browser to Edge',
+      'Database Sharding: Scalability Guide',
+      'Read Replicas: Performance Scaling',
+      'Write Throughput: Optimization Tips',
+    ];
+
+    const blogTitles = [
+      'Complete Guide to Kubernetes Deployments',
+      'Building Scalable Node.js Applications',
+      'Database Indexing Strategies Explained',
+      'GraphQL Tutorial: Building Modern APIs',
+      'Docker Best Practices for Production',
+      'React Performance Optimization',
+      'Python Async/Await Explained',
+      'Git Workflows for Teams',
+      'Machine Learning Basics for Developers',
+      'Implementing CI/CD Pipelines',
+      'Cloud Security: Defense in Depth',
+      'TypeScript Advanced Patterns',
+      'Building Real-time Applications',
+      'API Rate Limiting Strategies',
+      'Code Review Best Practices',
+      'System Design: Distributed Systems',
+      'Microservices Architecture Patterns',
+      'Event Sourcing: Complete Guide',
+      'CQRS: Command Query Separation',
+      'Domain-Driven Design: Practical Guide',
+      'Clean Architecture: Principles',
+      'SOLID Principles: Examples',
+      'Design Patterns: JavaScript',
+      'Refactoring: Code Improvement',
+      'Test-Driven Development: Guide',
+      'Behavior-Driven Development: BDD',
+      'Acceptance Test-Driven Development',
+      'Continuous Integration: Jenkins',
+      'Continuous Deployment: Strategies',
+      'Infrastructure as Code: Terraform',
+      'Configuration Management: Ansible',
+      'Container Orchestration: Kubernetes',
+      'Service Mesh: Istio Guide',
+      'Observability: Monitoring Stack',
+      'Logging: Best Practices',
+      'Tracing: Distributed Systems',
+      'Metrics: Prometheus Guide',
+      'Alerting: PagerDuty Setup',
+      'Incident Response: Playbook',
+      'Post-Mortem: Analysis Guide',
+      'Chaos Engineering: Resilience',
+      'Disaster Recovery: Planning',
+      'Business Continuity: Strategy',
+      'Compliance: GDPR Guide',
+      'Security Audits: Penetration Testing',
+      'Vulnerability Management: Process',
+      'Patch Management: Automation',
+      'Supply Chain Security: SBOM',
+    ];
+
+    const youtubeTitles = [
+      'Advanced Kubernetes Tutorial [Production Ready]',
+      'Building Microservices: Full Course',
+      'DevOps Roadmap for 2024',
+      'React Hooks Deep Dive',
+      'Docker and Kubernetes Comparison',
+      'System Design Interview Prep',
+      'Cloud Architecture Best Practices',
+      'Growth Marketing Strategy Guide',
+      'TypeScript Generics Explained',
+      'React Context API Deep Dive',
+      'Redux Toolkit: Complete Guide',
+      'Zustand: State Management',
+      'Jotai: Atomic State',
+      'Recoil: Facebook State',
+      'XState: State Machines',
+      'Robot: Visual State Machines',
+      'MobX: Reactive State',
+      'Pinia: Vue State',
+      'Vuex: Vue State Legacy',
+      'Apollo Client: GraphQL',
+      'React Query: Data Fetching',
+      'SWR: Data Fetching',
+      'TanStack Query: Data Fetching',
+      'Axios vs Fetch: HTTP',
+      'Fetch API: Complete Guide',
+      'XMLHttpRequest: Legacy AJAX',
+      'WebSocket: Real-Time Guide',
+      'Socket.io: Real-Time Framework',
+      'Pusher: Real-Time Service',
+      'Firebase Realtime Database',
+      'Firestore: NoSQL Database',
+      'Supabase: Open Source Firebase',
+      'PlanetScale: Serverless MySQL',
+      'Neon: Serverless PostgreSQL',
+      'MongoDB Atlas: Cloud Database',
+      'Redis: In-Memory Database',
+      'Elasticsearch: Search Engine',
+      'Meilisearch: Open Source Search',
+      'Algolia: Search as a Service',
+      'Typesense: Open Source Search',
+    ];
+
+    // Double the content - 40 LinkedIn, 30 Blog, 16 YouTube per tenant
+    for (let i = 0; i < 40; i++) {
+      await prisma.contentItem.create({
+        data: {
+          tenantId,
+          channel: 'LINKEDIN',
+          title: linkedinTitles[i % linkedinTitles.length],
+          contentType: 'text',
+          publishDate: new Date(Date.now() - (i * 86400000)),
+          rawData: JSON.stringify({ postId: `li_${tenantSlug}_${i}` }),
+          metrics: {
+            create: {
+              impressions: Math.floor(seededRandom(i + tenantSlug.length) * 5000) + 500,
+              reach: Math.floor(seededRandom(i + tenantSlug.length) * 3000) + 300,
+              likes: Math.floor(seededRandom(i + tenantSlug.length) * 150) + 10,
+              comments: Math.floor(seededRandom(i + tenantSlug.length) * 50) + 2,
+              shares: Math.floor(seededRandom(i + tenantSlug.length) * 20) + 1,
+              ctr: seededRandom(i + tenantSlug.length) * 5 + 0.5,
+              followerGrowth: Math.floor(seededRandom(i + tenantSlug.length) * 50),
+            },
+          },
+        },
+      });
+    }
+
+    for (let i = 0; i < 30; i++) {
+      await prisma.contentItem.create({
+        data: {
+          tenantId,
+          channel: 'BLOG',
+          title: blogTitles[i % blogTitles.length],
+          contentType: 'article',
+          publishDate: new Date(Date.now() - (i * 172800000)),
+          rawData: JSON.stringify({ articleId: `blog_${tenantSlug}_${i}` }),
+          metrics: {
+            create: {
+              wordCount: Math.floor(seededRandom(i + tenantSlug.length) * 3000) + 1000,
+              sessions: Math.floor(seededRandom(i + tenantSlug.length) * 1000) + 100,
+              timeOnPage: seededRandom(i + tenantSlug.length) * 300 + 30,
+              bounceRate: seededRandom(i + tenantSlug.length) * 80 + 10,
+              conversions: Math.floor(seededRandom(i + tenantSlug.length) * 20) + 1,
+              searchTraffic: Math.floor(seededRandom(i + tenantSlug.length) * 500) + 50,
+            },
+          },
+        },
+      });
+    }
+
+    for (let i = 0; i < 16; i++) {
+      await prisma.contentItem.create({
+        data: {
+          tenantId,
+          channel: 'YOUTUBE',
+          title: youtubeTitles[i % youtubeTitles.length],
+          contentType: 'video',
+          publishDate: new Date(Date.now() - (i * 604800000)),
+          rawData: JSON.stringify({ videoId: `yt_${tenantSlug}_${i}` }),
+          metrics: {
+            create: {
+              views: Math.floor(seededRandom(i + tenantSlug.length) * 50000) + 1000,
+              watchTime: seededRandom(i + tenantSlug.length) * 1000 + 100,
+              avgViewDuration: seededRandom(i + tenantSlug.length) * 600 + 60,
+              likes: Math.floor(seededRandom(i + tenantSlug.length) * 500) + 50,
+              comments: Math.floor(seededRandom(i + tenantSlug.length) * 100) + 5,
+              subscribersGained: Math.floor(seededRandom(i + tenantSlug.length) * 200) + 10,
+              commentText: `Great content! Really helpful for my project.`,
+            },
+          },
+        },
+      });
+    }
+  };
+
+  // Create content for all tenants using helper function
+  console.log('Creating content for all tenants...');
+  for (const tenant of createdTenants) {
+    await createContentForTenant(tenant.id, tenant.slug);
+  }
+
+  // OLD MANUAL SEEDING (commented out - replaced by helper function above)
+  /*
   // Seed ContentItems for devinsights
   console.log('Seeding content for devinsights...');
 
@@ -434,73 +672,51 @@ async function main() {
       },
     });
   }
+  */
 
-  // Seed competitors
-  console.log('Seeding competitors...');
+  // Seed competitors for all tenants
+  console.log('Seeding competitors for all tenants...');
 
-  await prisma.competitor.create({
-    data: {
-      tenantId: devInsights.id,
-      name: 'dev.to',
-      url: 'https://dev.to',
-      niche: 'developer education',
-      isAuto: false,
-      rawData: JSON.stringify({
-        estimatedMonthlyPosts: 45,
-        audienceSize: '1.2M monthly readers',
-        topTopics: ['AI & Machine Learning', 'Cloud Architecture', 'DevOps', 'API Design', 'Security'],
-        strengths: ['High publishing frequency', 'Strong community engagement', 'Broad topic coverage'],
-      }),
-    },
-  });
+  const competitorData = [
+    { name: 'dev.to', url: 'https://dev.to', niche: 'developer education', posts: 45, audience: '1.2M monthly readers', topics: ['AI & Machine Learning', 'Cloud Architecture', 'DevOps', 'API Design', 'Security'], strengths: ['High publishing frequency', 'Strong community engagement', 'Broad topic coverage'] },
+    { name: 'CSS-Tricks', url: 'https://css-tricks.com', niche: 'developer education', posts: 30, audience: '500K monthly readers', topics: ['Frontend Frameworks', 'CSS', 'Performance', 'Accessibility', 'Web Design'], strengths: ['Deep technical tutorials', 'Excellent SEO', 'Strong design community'] },
+    { name: 'Buffer', url: 'https://buffer.com', niche: 'B2B SaaS marketing', posts: 60, audience: '800K monthly readers', topics: ['Social Media Strategy', 'Content Marketing', 'Remote Work', 'Customer Stories', 'Analytics'], strengths: ['Consistent publishing cadence', 'Data-driven original research', 'Strong social distribution'] },
+    { name: 'Contentful', url: 'https://contentful.com', niche: 'B2B SaaS marketing', posts: 35, audience: '300K monthly readers', topics: ['Headless CMS', 'Omnichannel Content', 'Developer Experience', 'Case Studies', 'Content Operations'], strengths: ['Product-led storytelling', 'Developer-focused content', 'Enterprise case studies'] },
+    { name: 'TechCrunch', url: 'https://techcrunch.com', niche: 'technology news', posts: 100, audience: '5M monthly readers', topics: ['Startups', 'Venture Capital', 'AI', 'Enterprise Software', 'Mobile'], strengths: ['Breaking news coverage', 'Industry influence', 'Large audience reach'] },
+    { name: 'HubSpot', url: 'https://hubspot.com', niche: 'digital marketing', posts: 80, audience: '2M monthly readers', topics: ['Inbound Marketing', 'Sales', 'Customer Service', 'CRM', 'Automation'], strengths: ['Comprehensive resource library', 'Strong SEO', 'Educational focus'] },
+    { name: 'GitHub Blog', url: 'https://github.com/blog', niche: 'developer tools', posts: 40, audience: '1M monthly readers', topics: ['Open Source', 'Developer Tools', 'Security', 'CI/CD', 'Collaboration'], strengths: ['Developer trust', 'Technical depth', 'Community-driven'] },
+    { name: 'Y Combinator', url: 'https://ycombinator.com', niche: 'startup advice', posts: 25, audience: '500K monthly readers', topics: ['Startup Advice', 'Fundraising', 'Product Management', 'Growth', 'Hiring'], strengths: ['Prestige and authority', 'Real startup data', 'Founder network'] },
+    { name: 'AWS Blog', url: 'https://aws.amazon.com/blogs', niche: 'cloud computing', posts: 70, audience: '3M monthly readers', topics: ['Cloud Services', 'Architecture', 'Security', 'Machine Learning', 'DevOps'], strengths: ['Technical expertise', 'Product updates', 'Enterprise credibility'] },
+    { name: 'OpenAI Blog', url: 'https://openai.com/blog', niche: 'artificial intelligence', posts: 20, audience: '2M monthly readers', topics: ['AI Research', 'GPT', 'Machine Learning', 'Safety', 'Applications'], strengths: ['Cutting-edge research', 'Industry leadership', 'High engagement'] },
+  ];
 
-  await prisma.competitor.create({
-    data: {
-      tenantId: devInsights.id,
-      name: 'CSS-Tricks',
-      url: 'https://css-tricks.com',
-      niche: 'developer education',
-      isAuto: false,
-      rawData: JSON.stringify({
-        estimatedMonthlyPosts: 30,
-        audienceSize: '500K monthly readers',
-        topTopics: ['Frontend Frameworks', 'CSS', 'Performance', 'Accessibility', 'Web Design'],
-        strengths: ['Deep technical tutorials', 'Excellent SEO', 'Strong design community'],
-      }),
-    },
-  });
+  for (const tenant of createdTenants) {
+    // Add 2-3 competitors per tenant based on niche
+    const tenantNiche = tenant.niche || '';
+    const relevantCompetitors = competitorData.filter(c => 
+      c.niche === tenantNiche || 
+      ['developer education', 'developer tools', 'technology news'].includes(c.niche) && tenantNiche.includes('developer') ||
+      ['B2B SaaS marketing', 'digital marketing'].includes(c.niche) && tenantNiche.includes('marketing')
+    ).slice(0, 3);
 
-  await prisma.competitor.create({
-    data: {
-      tenantId: growthStack.id,
-      name: 'Buffer',
-      url: 'https://buffer.com',
-      niche: 'B2B SaaS marketing',
-      isAuto: false,
-      rawData: JSON.stringify({
-        estimatedMonthlyPosts: 60,
-        audienceSize: '800K monthly readers',
-        topTopics: ['Social Media Strategy', 'Content Marketing', 'Remote Work', 'Customer Stories', 'Analytics'],
-        strengths: ['Consistent publishing cadence', 'Data-driven original research', 'Strong social distribution'],
-      }),
-    },
-  });
-
-  await prisma.competitor.create({
-    data: {
-      tenantId: growthStack.id,
-      name: 'Contentful',
-      url: 'https://contentful.com',
-      niche: 'B2B SaaS marketing',
-      isAuto: false,
-      rawData: JSON.stringify({
-        estimatedMonthlyPosts: 35,
-        audienceSize: '300K monthly readers',
-        topTopics: ['Headless CMS', 'Omnichannel Content', 'Developer Experience', 'Case Studies', 'Content Operations'],
-        strengths: ['Product-led storytelling', 'Developer-focused content', 'Enterprise case studies'],
-      }),
-    },
-  });
+    for (const comp of relevantCompetitors) {
+      await prisma.competitor.create({
+        data: {
+          tenantId: tenant.id,
+          name: comp.name,
+          url: comp.url,
+          niche: comp.niche,
+          isAuto: false,
+          rawData: JSON.stringify({
+            estimatedMonthlyPosts: comp.posts,
+            audienceSize: comp.audience,
+            topTopics: comp.topics,
+            strengths: comp.strengths,
+          }),
+        },
+      });
+    }
+  }
 
   console.log('✅ Database seeded successfully!');
 }

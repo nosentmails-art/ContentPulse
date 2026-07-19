@@ -6,6 +6,8 @@
  * Handles nested objects (matrix, segments, gaps, competitors) with proper rendering
  */
 
+import SentimentDashboard from './SentimentDashboard';
+
 interface ReportSectionProps {
   agentType: string;
   title: string;
@@ -279,6 +281,16 @@ export function ReportSection({ agentType, title, data, status }: ReportSectionP
         <p className="text-slate-400">
           Analyze <span className="font-semibold">{agentNames[agentType]}</span> to see this section
         </p>
+      </div>
+    );
+  }
+
+  // Use specialized component for sentiment analysis
+  if (agentType === "SENTIMENT_ANALYSIS") {
+    return (
+      <div className="card">
+        <h2 className="text-2xl font-bold text-white mb-6">{title}</h2>
+        <SentimentDashboard data={data} />
       </div>
     );
   }

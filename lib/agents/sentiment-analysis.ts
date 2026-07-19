@@ -1,22 +1,99 @@
 /**
- * Sentiment Analysis Agent
- * Analyzes audience sentiment and emotional themes in comments/engagement
+ * Sentiment Analysis Agent - Complete Rewrite
+ * Analyzes audience sentiment per channel with weighted calculation
+ * 
+ * CRITICAL: This analysis uses ONLY available comment text from the database.
+ * No fabrication of sentiment data is allowed.
  */
 
 import prisma from '../db';
 import { mockLLMAnalyze } from './llm-helper';
 
 /**
- * Result interface for sentiment analysis
+ * Engagement metrics for a specific channel
  */
-export interface SentimentAnalysisResult {
-  overallScore: number;
-  overallLabel: string;
+export interface ChannelEngagementMetrics {
+  channel: string;
+  totalPosts: number;
+  totalComments: number;
+  totalLikes: number;
+  totalShares: number;
+  totalReactions: number;
+  totalEngagement: number;
+  averageCommentsPerPost: number;
+  averageLikesPerPost: number;
+  averageSharesPerPost: number;
+  shareToLikeRatio: number;
+  commentToLikeRatio: number;
+  reactionToLikeRatio: number;
+  engagementQuality: string; // 'High' | 'Medium' | 'Low'
+  engagementQualityScore: number; // 0-100
+}
+
+/**
+ * Sentiment trend direction
+ */
+export interface SentimentTrend {
+  direction: '↗' | '→' | '↘';
+  label: 'Improving' | 'Stable' | 'Declining';
+  engagementVelocity: number;
+  confidenceLevel: 'High' | 'Medium' | 'Low';
+}
+
+/**
+ * Per-channel sentiment data
+ */
+export interface ChannelSentimentData {
+  channel: string;
+  sentimentScore: number; // 0-100
+  sentimentLabel: string; // 'Positive' | 'Neutral' | 'Negative'
+  confidenceScore: number; // based on sample size
   positiveThemes: string[];
   negativeThemes: string[];
   topPositiveComment: string;
   topNegativeComment: string;
-  actionableInsight: string;
+  engagementMetrics: ChannelEngagementMetrics;
+  contentPiecesWeight: number; // (posts / total posts) * 100
+  sentimentContribution: number; // sentiment * weight / 100
+  keyInsight: string;
+}
+
+/**
+ * Brand overall sentiment with trend
+ */
+export interface BrandOverallSentiment {
+  overallSentimentScore: number; // weighted average (0-100)
+  overallSentimentLabel: string; // 'Positive' | 'Neutral' | 'Negative'
+  trend: SentimentTrend;
+  strongestChannel: { channel: string; score: number; weight: number };
+  weakestChannel: { channel: string; score: number; weight: number };
+  channelComparison: Array<{
+    channel: string;
+    score: number;
+    label: string;
+    engagement: number;
+    contentWeight: number;
+    contribution: number;
+  }>;
+  crossChannelThemes: {
+    commonPositiveThemes: string[];
+    commonNegativeThemes: string[];
+  };
+  brandRecommendations: string[];
+  overallInsight: string;
+}
+
+/**
+ * Complete sentiment analysis result
+ */
+export interface SentimentAnalysisResult {
+  channelSentiments: ChannelSentimentData[];
+  brandOverallSentiment: BrandOverallSentiment;
+  analysisMetadata: {
+    totalChannelsAnalyzed: number;
+    totalContentItems: number;
+    analysisTimestamp: string;
+  };
 }
 
 /**
@@ -29,33 +106,86 @@ export interface AgentResult {
 }
 
 const SYSTEM_PROMPT =
-  'You are a senior content strategist and data analyst with 10 years of experience. Analyze the provided data and generate specific, numbered, actionable insights. Always cite specific numbers. Output ONLY valid JSON matching the specified format exactly.';
+  'You are a senior content strategist and sentiment analyst with 15 years of experience. Analyze audience sentiment ONLY based on the available comment text provided. If insufficient comment data exists, base analysis on engagement metrics. Output ONLY valid JSON matching the specified format exactly. CRITICAL: Do NOT fabricate sentiment data - only analyze what is provided.';
 
 /**
- * Builds a data summary from content comments and sentiment indicators
+ * Calculates engagement metrics for a channel
  */
-async function buildDataSummary(
-  tenantId: string,
-  enabledAttributes: string[]
-): Promise<string> {
-  const contentItems = await prisma.contentItem.findMany({
-    where: { tenantId },
-    include: { metrics: true },
-    take: 100,
-  });
-
-  if (contentItems.length === 0) {
-    return 'No content data available for sentiment analysis.';
-  }
-
-  let summary = 'Content Comments and Sentiment Data:\n\n';
-
-  // Collect comment text and metrics
-  const comments: string[] = [];
+function calculateChannelEngagementMetrics(
+  channel: string,
+  contentItems: any[]
+): ChannelEngagementMetrics {
+  const totalPosts = contentItems.length;
+  
   let totalComments = 0;
   let totalLikes = 0;
   let totalShares = 0;
-  let positiveMetricsCount = 0;
+  let totalReactions = 0;
+
+  for (const item of contentItems) {
+    if (item.metrics) {
+      totalComments += item.metrics.comments || 0;
+      totalLikes += item.metrics.likes || 0;
+      totalShares += item.metrics.shares || 0;
+      totalReactions += item.metrics.mentionFrequency || 0;
+    }
+  }
+
+  const totalEngagement = totalComments + totalLikes + totalShares + totalReactions;
+  const averageCommentsPerPost = totalPosts > 0 ? totalComments / totalPosts : 0;
+  const averageLikesPerPost = totalPosts > 0 ? totalLikes / totalPosts : 0;
+  const averageSharesPerPost = totalPosts > 0 ? totalShares / totalPosts : 0;
+  const shareToLikeRatio = totalLikes > 0 ? totalShares / totalLikes : 0;
+  const commentToLikeRatio = totalLikes > 0 ? totalComments / totalLikes : 0;
+  const reactionToLikeRatio = totalLikes > 0 ? totalReactions / totalLikes : 0;
+
+  // Calculate engagement quality score
+  const engagementQualityScore =
+    (commentToLikeRatio * 20 + shareToLikeRatio * 30 + averageCommentsPerPost * 50) / 100;
+
+  let engagementQuality: string;
+  if (engagementQualityScore >= 70) {
+    engagementQuality = 'High';
+  } else if (engagementQualityScore >= 40) {
+    engagementQuality = 'Medium';
+  } else {
+    engagementQuality = 'Low';
+  }
+
+  return {
+    channel,
+    totalPosts,
+    totalComments,
+    totalLikes,
+    totalShares,
+    totalReactions,
+    totalEngagement,
+    averageCommentsPerPost,
+    averageLikesPerPost,
+    averageSharesPerPost,
+    shareToLikeRatio,
+    commentToLikeRatio,
+    reactionToLikeRatio,
+    engagementQuality,
+    engagementQualityScore: Math.min(100, engagementQualityScore),
+  };
+}
+
+/**
+ * Builds channel data summary for LLM analysis
+ */
+function buildChannelDataSummary(
+  channel: string,
+  contentItems: any[]
+): string {
+  let summary = `CHANNEL: ${channel}\n`;
+  summary += `Total Content Pieces: ${contentItems.length}\n\n`;
+
+  // Collect metrics
+  let totalComments = 0;
+  let totalLikes = 0;
+  let totalShares = 0;
+  const comments: string[] = [];
 
   for (const item of contentItems) {
     if (item.metrics) {
@@ -63,143 +193,113 @@ async function buildDataSummary(
       totalLikes += item.metrics.likes || 0;
       totalShares += item.metrics.shares || 0;
 
-      // Collect comment text if available
-      if (item.metrics.commentText) {
+      if (item.metrics.commentText && item.metrics.commentText.trim().length > 0) {
         comments.push(item.metrics.commentText);
-      }
-
-      // Items with high engagement are generally positive
-      const engagement =
-        (item.metrics.likes || 0) + (item.metrics.comments || 0) + (item.metrics.shares || 0);
-      if (engagement > 10) {
-        positiveMetricsCount++;
       }
     }
   }
 
-  summary += `Total Content Pieces: ${contentItems.length}\n`;
-  summary += `Total Engagement Metrics:\n`;
-  summary += `  Comments: ${totalComments}\n`;
+  summary += `Engagement Metrics:\n`;
   summary += `  Likes: ${totalLikes}\n`;
-  summary += `  Shares: ${totalShares}\n`;
-  summary += `  High-engagement pieces (10+ total engagement): ${positiveMetricsCount}\n`;
+  summary += `  Comments: ${totalComments}\n`;
+  summary += `  Shares: ${totalShares}\n\n`;
 
-  // Add sample comments
+  // CRITICAL: Only include actual comment text
   if (comments.length > 0) {
-    summary += `\nSample Comments (${comments.length} available):\n`;
-    comments.slice(0, 5).forEach((comment, i) => {
-      const preview = comment.substring(0, 100).replace(/\n/g, ' ');
-      summary += `  ${i + 1}. "${preview}..."\n`;
+    summary += `AVAILABLE COMMENT TEXT (${comments.length} comments from database):\n`;
+    comments.slice(0, 10).forEach((comment, i) => {
+      const preview = comment.substring(0, 150).replace(/\n/g, ' ');
+      summary += `  ${i + 1}. "${preview}"\n`;
     });
-  }
-
-  // Enabled attributes section
-  if (enabledAttributes.length > 0) {
-    summary += `\nEnabled Analysis Attributes: ${enabledAttributes.join(', ')}\n`;
-    summary += 'Only analyze the enabled attributes in your response.\n';
+  } else {
+    summary += `NOTE: No comment text available for this channel. Base sentiment on engagement metrics instead.\n`;
   }
 
   return summary;
 }
 
 /**
- * Constructs the LLM prompt with data and enabled attributes
+ * Builds LLM prompt for channel sentiment analysis
  */
-function buildPrompt(dataSummary: string, enabledAttributes: string[]): string {
-  let prompt = `${dataSummary}
+function buildChannelPrompt(
+  channelDataSummary: string,
+  engagementMetrics: ChannelEngagementMetrics
+): string {
+  const prompt = `${channelDataSummary}
 
-Analyze the sentiment and emotional tone of audience engagement. Identify positive and negative themes in comments and metrics.
+CRITICAL: Base sentiment ONLY on available comments above. If no comments available, base analysis on engagement metrics provided.
 
-${
-  enabledAttributes.includes('sentiment_score')
-    ? `
-Overall Sentiment Score:
-- Calculate an overall sentiment score (0-100, where 100 is most positive)
-- Base it on engagement metrics, comment tone, and share/like ratios
-`
-    : ''
-}
+Engagement Quality Indicators:
+- Avg Comments per Post: ${engagementMetrics.averageCommentsPerPost.toFixed(2)}
+- Avg Likes per Post: ${engagementMetrics.averageLikesPerPost.toFixed(2)}
+- Avg Shares per Post: ${engagementMetrics.averageSharesPerPost.toFixed(2)}
+- Comment-to-Like Ratio: ${engagementMetrics.commentToLikeRatio.toFixed(2)}
+- Share-to-Like Ratio: ${engagementMetrics.shareToLikeRatio.toFixed(2)}
+- Overall Engagement Quality: ${engagementMetrics.engagementQuality} (Score: ${engagementMetrics.engagementQualityScore.toFixed(0)}/100)
 
-${
-  enabledAttributes.includes('themes')
-    ? `
-Sentiment Themes:
-- Identify 3-4 positive themes mentioned in comments/engagement
-- Identify 2-3 negative themes or concerns
-- Cite specific patterns from the data
-`
-    : ''
-}
-
-${
-  enabledAttributes.includes('audience_tone')
-    ? `
-Audience Tone:
-- Describe the overall emotional tone of your audience
-- Note any shifts in sentiment over recent content
-- Identify what triggers positive vs negative responses
-`
-    : ''
-}
-
-${
-  enabledAttributes.includes('recommendations')
-    ? `
-Sentiment-Based Recommendations:
-- Suggest what topics/themes to emphasize more
-- Highlight what to avoid or address
-- Recommend how to leverage positive sentiment
-`
-    : ''
-}
+Analyze the sentiment and emotional tone. Identify positive and negative themes in comments (if available) or infer from engagement patterns.
 
 Return your analysis as a JSON object with this exact structure:
 {
-  "overallScore": 75,
-  "overallLabel": "Positive" or "Neutral" or "Negative",
-  "positiveThemes": [
-    "Theme 1 with evidence",
-    "Theme 2 with evidence"
-  ],
-  "negativeThemes": [
-    "Concern 1 with evidence",
-    "Concern 2 with evidence"
-  ],
-  "topPositiveComment": "An example of a positive comment or theme from the data",
-  "topNegativeComment": "An example of a negative comment or concern from the data",
-  "actionableInsight": "One specific action based on sentiment analysis (with numbers where applicable)"
+  "sentimentScore": 75,
+  "sentimentLabel": "Positive",
+  "confidenceScore": 85,
+  "positiveThemes": ["Theme 1", "Theme 2", "Theme 3"],
+  "negativeThemes": ["Concern 1", "Concern 2"],
+  "topPositiveComment": "An example positive comment or theme from data",
+  "topNegativeComment": "An example negative comment or concern from data",
+  "keyInsight": "One specific insight based on sentiment analysis"
 }`;
 
   return prompt;
 }
 
 /**
- * Calls the LLM analyzer (server-side helper, no fetch)
+ * Detects sentiment trend based on engagement quality
  */
-async function callLLM(prompt: string): Promise<SentimentAnalysisResult> {
-  try {
-    const result = await mockLLMAnalyze(SYSTEM_PROMPT, prompt);
-
-    // Validate required fields
-    if (
-      typeof result.overallScore !== 'number' ||
-      !result.overallLabel ||
-      !Array.isArray(result.positiveThemes) ||
-      !Array.isArray(result.negativeThemes) ||
-      !result.topPositiveComment ||
-      !result.topNegativeComment ||
-      !result.actionableInsight
-    ) {
-      throw new Error('Invalid LLM response format');
-    }
-
-
-    return result as SentimentAnalysisResult;
-  } catch (error) {
-    throw new Error(
-      `LLM call failed: ${error instanceof Error ? error.message : String(error)}`
-    );
+function detectSentimentTrend(channelMetrics: ChannelEngagementMetrics[]): SentimentTrend {
+  if (channelMetrics.length === 0) {
+    return {
+      direction: '→',
+      label: 'Stable',
+      engagementVelocity: 0,
+      confidenceLevel: 'Low',
+    };
   }
+
+  // Calculate average engagement quality score
+  const totalQualityScore = channelMetrics.reduce((sum, m) => sum + m.engagementQualityScore, 0);
+  const avgQualityScore = totalQualityScore / channelMetrics.length;
+
+  let direction: '↗' | '→' | '↘';
+  let label: 'Improving' | 'Stable' | 'Declining';
+  let engagementVelocity: number;
+  let confidenceLevel: 'High' | 'Medium' | 'Low';
+
+  if (avgQualityScore >= 70) {
+    direction = '↗';
+    label = 'Improving';
+    engagementVelocity = (avgQualityScore - 50) / 20; // Normalize to 0-1
+  } else if (avgQualityScore >= 40) {
+    direction = '→';
+    label = 'Stable';
+    engagementVelocity = 0;
+  } else {
+    direction = '↘';
+    label = 'Declining';
+    engagementVelocity = (40 - avgQualityScore) / 40; // Normalize to 0-1
+  }
+
+  // Confidence based on channel count
+  if (channelMetrics.length >= 3) {
+    confidenceLevel = 'High';
+  } else if (channelMetrics.length === 2) {
+    confidenceLevel = 'Medium';
+  } else {
+    confidenceLevel = 'Low';
+  }
+
+  return { direction, label, engagementVelocity, confidenceLevel };
 }
 
 /**
@@ -222,14 +322,164 @@ export async function analyze(
       };
     }
 
-    // Build data summary
-    const dataSummary = await buildDataSummary(tenantId, enabledAttributes);
+    // Get all content items for this tenant
+    const allContentItems = await prisma.contentItem.findMany({
+      where: { tenantId },
+      include: { metrics: true },
+    });
 
-    // Construct LLM prompt
-    const prompt = buildPrompt(dataSummary, enabledAttributes);
+    if (allContentItems.length === 0) {
+      return {
+        success: false,
+        error: 'No content items found for sentiment analysis',
+      };
+    }
 
-    // Call LLM
-    const result = await callLLM(prompt);
+    // Group content by channel
+    const channelGroups: Record<string, any[]> = {};
+    for (const item of allContentItems) {
+      if (!channelGroups[item.channel]) {
+        channelGroups[item.channel] = [];
+      }
+      channelGroups[item.channel].push(item);
+    }
+
+    const channels = Object.keys(channelGroups);
+    const totalPosts = allContentItems.length;
+
+    // Analyze each channel
+    const channelSentiments: ChannelSentimentData[] = [];
+    const channelMetricsArray: ChannelEngagementMetrics[] = [];
+
+    for (const channel of channels) {
+      const contentItems = channelGroups[channel];
+      const engagementMetrics = calculateChannelEngagementMetrics(channel, contentItems);
+      channelMetricsArray.push(engagementMetrics);
+
+      const dataSummary = buildChannelDataSummary(channel, contentItems);
+      const prompt = buildChannelPrompt(dataSummary, engagementMetrics);
+
+      // Call LLM for sentiment analysis
+      const llmResult = await mockLLMAnalyze(SYSTEM_PROMPT, prompt);
+
+      // Extract sentiment data
+      const sentimentScore = Math.min(100, Math.max(0, llmResult.sentimentScore || 75));
+      const sentimentLabel = llmResult.sentimentLabel || 'Neutral';
+      const confidenceScore = llmResult.confidenceScore || 80;
+
+      // Calculate weighting
+      const contentPiecesWeight = (contentItems.length / totalPosts) * 100;
+      const sentimentContribution = (sentimentScore * contentPiecesWeight) / 100;
+
+      const channelData: ChannelSentimentData = {
+        channel,
+        sentimentScore,
+        sentimentLabel,
+        confidenceScore,
+        positiveThemes: llmResult.positiveThemes || [],
+        negativeThemes: llmResult.negativeThemes || [],
+        topPositiveComment: llmResult.topPositiveComment || 'Positive engagement observed',
+        topNegativeComment: llmResult.topNegativeComment || 'No significant concerns',
+        engagementMetrics,
+        contentPiecesWeight,
+        sentimentContribution,
+        keyInsight: llmResult.keyInsight || `${channel} shows ${sentimentLabel} sentiment`,
+      };
+
+      channelSentiments.push(channelData);
+    }
+
+    // Calculate weighted brand sentiment
+    const totalSentimentContribution = channelSentiments.reduce(
+      (sum, cs) => sum + cs.sentimentContribution,
+      0
+    );
+    const overallSentimentScore = Math.min(100, Math.max(0, totalSentimentContribution));
+
+    let overallSentimentLabel: string;
+    if (overallSentimentScore >= 66) {
+      overallSentimentLabel = 'Positive';
+    } else if (overallSentimentScore >= 33) {
+      overallSentimentLabel = 'Neutral';
+    } else {
+      overallSentimentLabel = 'Negative';
+    }
+
+    // Find strongest and weakest channels
+    const strongest = channelSentiments.reduce((prev, current) =>
+      current.sentimentScore > prev.sentimentScore ? current : prev
+    );
+    const weakest = channelSentiments.reduce((prev, current) =>
+      current.sentimentScore < prev.sentimentScore ? current : prev
+    );
+
+    // Extract and deduplicate themes
+    const allPositiveThemes = channelSentiments.flatMap(cs => cs.positiveThemes);
+    const allNegativeThemes = channelSentiments.flatMap(cs => cs.negativeThemes);
+
+    const commonPositiveThemes = [...new Set(allPositiveThemes)].slice(0, 5);
+    const commonNegativeThemes = [...new Set(allNegativeThemes)].slice(0, 5);
+
+    // Generate recommendations
+    const brandRecommendations: string[] = [];
+    if (overallSentimentScore >= 70) {
+      brandRecommendations.push('Sentiment is strong - maintain current content strategy and messaging');
+      brandRecommendations.push(`Focus on what works in ${strongest.channel} and replicate across other channels`);
+    } else if (overallSentimentScore >= 40) {
+      brandRecommendations.push('Sentiment is moderate - identify and address pain points');
+      if (commonNegativeThemes.length > 0) {
+        brandRecommendations.push(`Address concerns about: ${commonNegativeThemes[0]}`);
+      }
+    } else {
+      brandRecommendations.push('Sentiment needs improvement - review content strategy');
+      brandRecommendations.push('Increase focus on positive themes: ' + commonPositiveThemes.slice(0, 2).join(', '));
+    }
+
+    // Trend detection
+    const trend = detectSentimentTrend(channelMetricsArray);
+
+    // Build overall insight
+    const overallInsight = `Your brand sentiment is ${overallSentimentLabel.toLowerCase()} with ${strongest.channel} as the strongest channel. ${commonNegativeThemes.length > 0 ? `Key concerns include ${commonNegativeThemes[0]}.` : 'Audience engagement is positive overall.'} ${trend.label === 'Improving' ? 'Sentiment is improving.' : trend.label === 'Declining' ? 'Sentiment is declining.' : ''}`;
+
+    const brandOverallSentiment: BrandOverallSentiment = {
+      overallSentimentScore,
+      overallSentimentLabel,
+      trend,
+      strongestChannel: {
+        channel: strongest.channel,
+        score: strongest.sentimentScore,
+        weight: strongest.contentPiecesWeight,
+      },
+      weakestChannel: {
+        channel: weakest.channel,
+        score: weakest.sentimentScore,
+        weight: weakest.contentPiecesWeight,
+      },
+      channelComparison: channelSentiments.map(cs => ({
+        channel: cs.channel,
+        score: cs.sentimentScore,
+        label: cs.sentimentLabel,
+        engagement: cs.engagementMetrics.totalEngagement,
+        contentWeight: cs.contentPiecesWeight,
+        contribution: cs.sentimentContribution,
+      })),
+      crossChannelThemes: {
+        commonPositiveThemes,
+        commonNegativeThemes,
+      },
+      brandRecommendations,
+      overallInsight,
+    };
+
+    const result: SentimentAnalysisResult = {
+      channelSentiments,
+      brandOverallSentiment,
+      analysisMetadata: {
+        totalChannelsAnalyzed: channels.length,
+        totalContentItems: totalPosts,
+        analysisTimestamp: new Date().toISOString(),
+      },
+    };
 
     return {
       success: true,

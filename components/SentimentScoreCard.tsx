@@ -30,7 +30,7 @@ export function SentimentScoreCard({
 
       <div className="text-center mb-8">
         <div className={`text-5xl font-bold ${getScoreColor(score)}`}>
-          {score}%
+          {score.toFixed(1)}%
         </div>
         <p className="text-slate-400 text-sm mt-2">Audience Sentiment</p>
       </div>

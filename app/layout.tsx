@@ -6,8 +6,8 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ContentPulse - Multi-Tenant Content Intelligence Platform",
-  description: "AI-powered content intelligence orchestration platform",
+  title: "ContentPulse - Content Intelligence for Editorial Teams",
+  description: "Know what to publish next with AI-powered content analysis",
 };
 
 export default function RootLayout({

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Play } from "lucide-react";
@@ -33,14 +33,11 @@ const AGENT_ICONS: Record<string, React.ReactNode> = {
   OPPORTUNITY_IDENTIFICATION: <Lightbulb className="w-8 h-8" />,
 };
 
-const AGENT_DETAILS: Record<
-  string,
-  { name: string; description: string; attributes: any[] }
-> = {
+const DEFAULT_AGENT_CONFIG: Record<string, { name: string; description: string; defaultAttributes: any[] }> = {
   CONTENT_ANALYTICS: {
     name: "Content Analytics",
     description: "Ingests and normalizes all channel data",
-    attributes: [
+    defaultAttributes: [
       { key: "linkedin", label: "Pull LinkedIn data", enabled: true },
       { key: "youtube", label: "Pull YouTube data", enabled: true },
       { key: "blog", label: "Pull Blog data", enabled: true },
@@ -50,7 +47,7 @@ const AGENT_DETAILS: Record<
   AUDIENCE_INTELLIGENCE: {
     name: "Audience Intelligence",
     description: "Analyzes who is engaging with your content",
-    attributes: [
+    defaultAttributes: [
       { key: "timing", label: "Engagement timing analysis", enabled: true },
       { key: "segments", label: "Audience segment breakdown", enabled: true },
       { key: "overlap", label: "Cross-channel overlap", enabled: false },
@@ -59,7 +56,7 @@ const AGENT_DETAILS: Record<
   CHANNEL_CONTENT_INTELLIGENCE: {
     name: "Channel Intelligence",
     description: "Which channel works best for which format",
-    attributes: [
+    defaultAttributes: [
       { key: "matrix", label: "Format performance matrix", enabled: true },
       { key: "best_channel", label: "Best channel per content type", enabled: true },
     ],
@@ -67,7 +64,7 @@ const AGENT_DETAILS: Record<
   SENTIMENT_ANALYSIS: {
     name: "Sentiment Analysis",
     description: "Analyzes comments and reactions across channels",
-    attributes: [
+    defaultAttributes: [
       { key: "comments", label: "Comment sentiment scoring", enabled: true },
       { key: "themes", label: "Key theme extraction", enabled: true },
     ],
@@ -75,7 +72,7 @@ const AGENT_DETAILS: Record<
   GAP_ANALYSIS: {
     name: "Gap Analysis",
     description: "Finds content gaps in your strategy",
-    attributes: [
+    defaultAttributes: [
       { key: "topics", label: "Topic gap identification", enabled: true },
       { key: "formats", label: "Format gap analysis", enabled: true },
     ],
@@ -83,7 +80,7 @@ const AGENT_DETAILS: Record<
   COMPETITOR_ANALYSIS: {
     name: "Competitor Analysis",
     description: "Benchmarks your content against competitors",
-    attributes: [
+    defaultAttributes: [
       { key: "topics", label: "Topic coverage comparison", enabled: true },
       { key: "formats", label: "Format mix comparison", enabled: false },
     ],
@@ -91,56 +88,46 @@ const AGENT_DETAILS: Record<
   OPPORTUNITY_IDENTIFICATION: {
     name: "Opportunity Finder",
     description: "Recommends what to create next",
-    attributes: [
+    defaultAttributes: [
       { key: "topics", label: "Topic recommendations", enabled: true },
       { key: "channels", label: "Channel expansion", enabled: true },
     ],
   },
 };
 
-const MOCK_RUNS = [
-  {
-    id: 1,
-    date: "Today, 10:30 AM",
-    status: "COMPLETED",
-    duration: "2m 34s",
-  },
-  {
-    id: 2,
-    date: "Yesterday, 11:15 AM",
-    status: "COMPLETED",
-    duration: "2m 18s",
-  },
-  {
-    id: 3,
-    date: "Dec 15, 3:45 PM",
-    status: "COMPLETED",
-    duration: "2m 41s",
-  },
-  {
-    id: 4,
-    date: "Dec 14, 9:20 AM",
-    status: "COMPLETED",
-    duration: "2m 22s",
-  },
-  {
-    id: 5,
-    date: "Dec 13, 2:30 PM",
-    status: "ERROR",
-    duration: "Failed",
-  },
-];
-
 export default function AgentDetailPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
-  const agentType = (params.agentType as string).toUpperCase();
-  const agent = AGENT_DETAILS[agentType];
-  const [attributes, setAttributes] = useState(agent?.attributes || []);
+  const agentTypeParam = (params.agentType as string).toUpperCase();
+  const agentConfig = DEFAULT_AGENT_CONFIG[agentTypeParam];
+  const [agentData, setAgentData] = useState<any>(null);
+  const [runs, setRuns] = useState<any[]>([]);
+  const [attributes, setAttributes] = useState(agentConfig?.defaultAttributes || []);
   const [running, setRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<"IDLE" | "RUNNING" | "COMPLETED" | "ERROR">("IDLE");
+  const [loading, setLoading] = useState(true);
 
-  if (!agent) {
+  // Fetch agent data on mount
+  useEffect(() => {
+    fetch(`/api/${tenantSlug}/agents`)
+      .then((res) => res.json())
+      .then((data) => {
+        const found = data.agents?.find((a: any) => a.type === agentTypeParam);
+        if (found) {
+          setAgentData(found);
+          setAttributes(found.attributes ?? []);
+          setRuns(found.runs ?? []);
+          setAgentStatus(found.latestRun?.status ?? "IDLE");
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch agent data:", err);
+        setLoading(false);
+      });
+  }, [tenantSlug, agentTypeParam]);
+
+  if (!agentConfig) {
     return (
       <div className="container-page py-12 text-center">
         <p className="text-slate-400">Agent not found</p>
@@ -159,16 +146,35 @@ export default function AgentDetailPage() {
     );
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setRunning(true);
     setAgentStatus("RUNNING");
-    toast.loading("Running agent...");
-    setTimeout(() => {
-      setRunning(false);
+    const id = toast.loading("Analyzing...");
+
+    try {
+      await fetch(`/api/${tenantSlug}/agents/${agentTypeParam.toLowerCase()}/run`, {
+        method: "POST",
+      });
+      toast.dismiss(id);
+      toast.success("Analysis complete");
       setAgentStatus("COMPLETED");
-      toast.success("Agent completed");
-    }, 3000);
+      const data = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
+      const found = data.agents?.find((a: any) => a.type === agentTypeParam);
+      if (found) {
+        setAgentData(found);
+        setRuns(found.runs ?? []);
+        setAgentStatus(found.latestRun?.status ?? "IDLE");
+      }
+    } catch (e) {
+      toast.dismiss(id);
+      toast.error("Analysis failed");
+      setAgentStatus("ERROR");
+    } finally {
+      setRunning(false);
+    }
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -178,7 +184,7 @@ export default function AgentDetailPage() {
           <Link href={`/${tenantSlug}`} className="hover:text-indigo-400 transition">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-white">{agent.name}</h1>
+          <h1 className="text-2xl font-bold text-white">{agentConfig.name}</h1>
         </div>
       </div>
 
@@ -187,10 +193,10 @@ export default function AgentDetailPage() {
         {/* Agent Header */}
         <div className="card mb-8">
           <div className="flex items-start gap-6 mb-6">
-            <div className="text-indigo-500">{AGENT_ICONS[agentType]}</div>
+            <div className="text-indigo-500">{AGENT_ICONS[agentTypeParam]}</div>
             <div className="flex-1">
-              <h2 className="text-3xl font-bold text-white mb-2">{agent.name}</h2>
-              <p className="text-slate-400">{agent.description}</p>
+              <h2 className="text-3xl font-bold text-white mb-2">{agentConfig.name}</h2>
+              <p className="text-slate-400">{agentConfig.description}</p>
             </div>
             <StatusBadge status={agentStatus} />
           </div>
@@ -201,7 +207,7 @@ export default function AgentDetailPage() {
             className="btn-primary flex items-center gap-2"
           >
             <Play className="w-4 h-4" />
-            {running ? "Running..." : "Run Agent"}
+            {running ? "Analyzing..." : "Run Analysis"}
           </button>
         </div>
 
@@ -226,39 +232,51 @@ export default function AgentDetailPage() {
           </div>
         </div>
 
+        {/* Latest Result */}
+        {agentData?.latestRun?.resultJson && (
+          <div className="card mb-8">
+            <h3 className="text-xl font-bold text-white mb-6">Latest Result</h3>
+            <pre className="bg-slate-900 p-4 rounded-lg overflow-x-auto text-xs text-slate-300 border border-slate-700">
+              {JSON.stringify(JSON.parse(agentData.latestRun.resultJson), null, 2)}
+            </pre>
+          </div>
+        )}
+
         {/* Run History */}
         <div className="card">
           <h3 className="text-xl font-bold text-white mb-6">Run History</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Duration</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_RUNS.map((run) => (
-                  <tr key={run.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                    <td className="py-3 px-4 text-slate-300">{run.date}</td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={run.status as any} />
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{run.duration}</td>
-                    <td className="py-3 px-4">
-                      {run.status === "COMPLETED" && (
-                        <button className="text-indigo-400 hover:text-indigo-300 text-sm">
-                          View Result
-                        </button>
-                      )}
-                    </td>
+          {runs.length === 0 ? (
+            <p className="text-slate-400">No runs yet. Click "Run Analysis" to start.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-300">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {runs.map((run) => (
+                    <tr key={run.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition">
+                      <td className="py-3 px-4 text-slate-300">{new Date(run.startedAt).toLocaleString()}</td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={run.status as any} />
+                      </td>
+                      <td className="py-3 px-4">
+                        {run.status === "COMPLETED" && (
+                          <button className="text-indigo-400 hover:text-indigo-300 text-sm">
+                            View Result
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

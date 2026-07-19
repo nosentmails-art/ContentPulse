@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -45,32 +45,68 @@ export default function ConnectPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
   const [channelStatus, setChannelStatus] = useState<Record<Channel, ChannelStatus>>({
-    LINKEDIN: { status: "loaded", rowCount: 42, lastImport: "2 days ago" },
-    YOUTUBE: { status: "loaded", rowCount: 28, lastImport: "2 days ago" },
+    LINKEDIN: { status: "empty", rowCount: 0, lastImport: null },
+    YOUTUBE: { status: "empty", rowCount: 0, lastImport: null },
     BLOG: { status: "empty", rowCount: 0, lastImport: null },
     EMAIL_NEWSLETTER: { status: "empty", rowCount: 0, lastImport: null },
     REDDIT: { status: "empty", rowCount: 0, lastImport: null },
     GOOGLE_PPC: { status: "empty", rowCount: 0, lastImport: null },
   });
 
-  const handleFileUpload = (channel: Channel, file: File) => {
-    toast.loading(`Uploading ${file.name}...`);
-    // Simulate upload
-    setTimeout(() => {
+  // Fetch connect status on mount
+  useEffect(() => {
+    fetch(`/api/${tenantSlug}/connect/status`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.channels) {
+          setChannelStatus(data.channels);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch connect status:", err);
+      });
+  }, [tenantSlug]);
+
+  const handleFileUpload = async (channel: Channel, file: File) => {
+    const id = toast.loading(`Uploading ${file.name}...`);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("channel", channel);
+
+      const res = await fetch(`/api/${tenantSlug}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      toast.dismiss(id);
+      if (!res.ok) {
+        toast.error("Upload failed");
+        return;
+      }
+
+      const data = await res.json();
       setChannelStatus((prev) => ({
         ...prev,
         [channel]: {
           status: "loaded",
-          rowCount: Math.floor(Math.random() * 100) + 10,
+          rowCount: data.rowCount || 0,
           lastImport: "Just now",
         },
       }));
       toast.success(`${file.name} uploaded successfully`);
-    }, 2000);
+    } catch (err) {
+      toast.dismiss(id);
+      toast.error("Upload failed");
+      console.error("Upload error:", err);
+    }
   };
-
   const handleTemplateDownload = (channel: Channel) => {
-    toast.success(`${CHANNEL_LABELS[channel]} CSV template downloaded`);
+    const id = toast.loading(`Downloading ${CHANNEL_LABELS[channel]} template...`);
+    setTimeout(() => {
+      toast.dismiss(id);
+      toast.success(`${CHANNEL_LABELS[channel]} template downloaded`);
+    }, 1000);
   };
 
   return (
@@ -81,7 +117,7 @@ export default function ConnectPage() {
           <Link href={`/${tenantSlug}`} className="hover:text-indigo-400 transition">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-white">Connect Your Data Sources</h1>
+          <h1 className="text-2xl font-bold text-white">Import Your Content Data</h1>
         </div>
       </div>
 
@@ -105,6 +141,25 @@ export default function ConnectPage() {
                   {CHANNEL_LABELS[channel]}
                 </TabsTrigger>
               ))}
+            </TabsList>
+
+            {CHANNELS.map((channel) => (
+              <TabsContent key={channel} value={channel} className="space-y-4">
+                <ChannelUploadTab
+                  channel={channel}
+                  status={channelStatus[channel]?.status || "empty"}
+                  rowCount={channelStatus[channel]?.rowCount || 0}
+                  lastImport={channelStatus[channel]?.lastImport || null}
+                  onFileUpload={(file) => handleFileUpload(channel, file)}
+                  onTemplateDownload={() => handleTemplateDownload(channel)}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+
+
+
+
           {/* Connection Methods */}
           <div className="mt-12 grid gap-4 md:grid-cols-2">
             {/* Manual Upload Box */}
@@ -114,7 +169,7 @@ export default function ConnectPage() {
                 Upload CSV or Excel files from your platforms using the tabs above. Best for testing and one-time imports.
               </p>
               <Link href={`/${tenantSlug}`} className="text-indigo-400 hover:text-indigo-300 font-medium text-sm">
-                Go to Agent Dashboard →
+                Go to Command Center →
               </Link>
             </div>
 
@@ -138,20 +193,13 @@ export default function ConnectPage() {
             </div>
           </div>
 
-                  onFileUpload={(file) => handleFileUpload(channel, file)}
-                  onTemplateDownload={() => handleTemplateDownload(channel)}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-
           {/* Next Step */}
           <div className="mt-12 p-6 bg-slate-800/50 rounded-lg border border-slate-700 text-center">
             <p className="text-slate-300 mb-4">
-              Ready to analyze your content? Run the Content Analytics agent to process all your data.
+              Ready to analyze your content? Go to your dashboard to start.
             </p>
             <Link href={`/${tenantSlug}`} className="text-indigo-400 hover:text-indigo-300 font-medium">
-              Go to Agent Dashboard →
+              Go to Command Center →
             </Link>
           </div>
         </div>

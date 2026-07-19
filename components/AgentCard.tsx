@@ -149,14 +149,14 @@ export function AgentCard({
           disabled={!enabled || status === "RUNNING"}
           className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {status === "RUNNING" ? "Running..." : "Run Agent"}
+          {status === "RUNNING" ? "Analyzing..." : "Analyze"}
         </button>
 
         {/* View Details Link */}
         <Link
           href={detailHref}
           className="flex items-center justify-center px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-slate-300 hover:text-indigo-400 border border-slate-700 hover:border-indigo-500"
-          title="View agent details and run history"
+          title="View details and run history"
         >
           <ArrowRight className="w-4 h-4" />
         </Link>

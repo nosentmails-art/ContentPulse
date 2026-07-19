@@ -15,15 +15,14 @@ export default function Home() {
       <section className="container-page py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Turn Content Data Into{" "}
+            Turn Scattered Content Metrics Into{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-              Editorial Intelligence
+              Your Next Winning Strategy
             </span>
           </h1>
 
           <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            ContentPulse orchestrates AI agents to analyze your multi-channel content, 
-            identify patterns, and deliver actionable insights your team can act on immediately.
+            ContentPulse connects your LinkedIn, YouTube, Blog, and Email data, then tells you exactly what to publish next.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -46,28 +45,28 @@ export default function Home() {
       {/* Features Section */}
       <section id="features" className="container-page py-20 border-t border-slate-800">
         <h2 className="text-3xl font-bold text-white text-center mb-12">
-          Multi-Tenant, Multi-Agent Intelligence
+          Everything Your Content Team Needs to Decide What to Publish Next
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {[
             {
               icon: BarChart3,
-              title: "Multi-Channel Analysis",
+              title: "Know What Works on Every Channel",
               description:
-                "Aggregate and analyze content performance across LinkedIn, YouTube, Blog, Email, Reddit, and more.",
+                "See which formats and channels actually move your audience, in one dashboard.",
             },
             {
               icon: Zap,
-              title: "AI Agent Orchestration",
+              title: "Spot Gaps, Sentiment & Opportunities",
               description:
-                "Deploy specialized agents for audience intelligence, gap analysis, sentiment, competitors, and opportunities.",
+                "AI surfaces missing topics, audience sentiment, and competitor moves before your rivals do.",
             },
             {
               icon: FileText,
-              title: "Actionable Reports",
+              title: "Get a Ready-to-Use Content Brief",
               description:
-                "Generate comprehensive intelligence reports with specific recommendations your team can execute.",
+                "Walk away with recommended topics, titles, channels, and timing — not another raw report.",
             },
           ].map((feature, i) => {
             const Icon = feature.icon;
@@ -86,11 +85,10 @@ export default function Home() {
       <section className="container-page py-20 border-t border-slate-800">
         <div className="bg-gradient-to-r from-indigo-900 to-violet-900 rounded-xl p-12 text-center border border-indigo-800 max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Transform Your Content Strategy?
+            Ready to Stop Guessing What to Publish?
           </h2>
           <p className="text-indigo-100 mb-8">
-            Start with our demo workspace and see how AI-powered content intelligence
-            can guide your editorial decisions.
+            Start with the demo workspace and see what your content plan could look like this week.
           </p>
           <Link href="/devinsights" className="btn-primary inline-flex items-center gap-2">
             Explore Demo <ArrowRight className="w-5 h-5" />
@@ -100,7 +98,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm">
-        <p>&copy; 2024 ContentPulse. Multi-tenant content intelligence platform.</p>
+        <p>&copy; 2024 ContentPulse. Content intelligence for editorial teams.</p>
       </footer>
     </div>
   );

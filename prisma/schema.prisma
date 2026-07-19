@@ -6,109 +6,111 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
 model Tenant {
-  id            String        @id @default(cuid())
-  name          String
-  slug          String        @unique
-  website       String?
-  niche         String?
-  createdAt     DateTime      @default(now())
-  agents        Agent[]
-  contentItems  ContentItem[]
-  competitors   Competitor[]
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  website      String?
+  niche        String?
+  createdAt    DateTime      @default(now())
+  agents       Agent[]
+  competitors  Competitor[]
+  contentItems ContentItem[]
 }
 
 model Agent {
   id          String           @id @default(cuid())
   tenantId    String
-  tenant      Tenant           @relation(fields: [tenantId], references: [id])
-  type        String           // AgentType as string
+  type        String
   name        String
   description String
   enabled     Boolean          @default(true)
-  status      String           @default("IDLE") // AgentStatus as string
+  status      String           @default("IDLE")
   lastRun     DateTime?
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
   attributes  AgentAttribute[]
   runs        AgentRun[]
+
   @@unique([tenantId, type])
 }
 
 model AgentAttribute {
   id          String  @id @default(cuid())
   agentId     String
-  agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
   key         String
   label       String
   description String?
   enabled     Boolean @default(true)
+  agent       Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
 }
 
 model AgentRun {
-  id            String      @id @default(cuid())
-  agentId       String
-  agent         Agent       @relation(fields: [agentId], references: [id])
-  status        String      // AgentStatus as string
-  startedAt     DateTime    @default(now())
-  completedAt   DateTime?
-  logs          String?
-  resultJson    String?
+  id          String    @id @default(cuid())
+  agentId     String
+  status      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  logs        String?
+  resultJson  String?
+  agent       Agent     @relation(fields: [agentId], references: [id])
 }
 
 model ContentItem {
   id          String          @id @default(cuid())
   tenantId    String
-  tenant      Tenant          @relation(fields: [tenantId], references: [id])
-  channel     String          // Channel as string
-  url         String?         // For deduplication (LinkedIn post URL, YouTube video URL, etc.)
+  channel     String
+  url         String?
   title       String?
   contentType String?
   publishDate DateTime?
   rawData     String
-  metrics     ChannelMetrics?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now()) @updatedAt
+  metrics     ChannelMetrics?
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
 }
 
 model ChannelMetrics {
-  id                  String      @id @default(cuid())
-  contentItemId       String      @unique
-  contentItem         ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
-  impressions         Float?
-  reach               Float?
-  clicks              Float?
-  ctr                 Float?
-  likes               Float?
-  comments            Float?
-  shares              Float?
-  followerGrowth      Float?
-  views               Float?
-  watchTime           Float?
-  avgViewDuration     Float?
-  subscribersGained   Float?
-  sessions            Float?
-  timeOnPage          Float?
-  bounceRate          Float?
-  conversions         Float?
-  searchTraffic       Float?
-  wordCount           Int?
-  openRate            Float?
-  unsubscribes        Float?
-  leadsGenerated      Float?
-  upvotes             Float?
-  mentionFrequency    Float?
-  trendVelocity       Float?
-  cpc                 Float?
-  costPerConversion   Float?
-  commentText         String?
+  id                String      @id @default(cuid())
+  contentItemId     String      @unique
+  impressions       Float?
+  reach             Float?
+  clicks            Float?
+  ctr               Float?
+  likes             Float?
+  comments          Float?
+  shares            Float?
+  followerGrowth    Float?
+  views             Float?
+  watchTime         Float?
+  avgViewDuration   Float?
+  subscribersGained Float?
+  sessions          Float?
+  timeOnPage        Float?
+  bounceRate        Float?
+  conversions       Float?
+  searchTraffic     Float?
+  wordCount         Int?
+  openRate          Float?
+  unsubscribes      Float?
+  leadsGenerated    Float?
+  upvotes           Float?
+  mentionFrequency  Float?
+  trendVelocity     Float?
+  cpc               Float?
+  costPerConversion Float?
+  commentText       String?
+  contentItem       ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
 }
 
 model Competitor {
-  id        String  @id @default(cuid())
-  tenantId  String
-  tenant    Tenant  @relation(fields: [tenantId], references: [id])
-  name      String
-  url       String
-  niche     String?
-  isAuto    Boolean @default(false)
-  rawData   String?
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  url      String
+  niche    String?
+  isAuto   Boolean @default(false)
+  rawData  String?
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
 }

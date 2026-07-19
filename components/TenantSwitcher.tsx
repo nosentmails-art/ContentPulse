@@ -35,11 +35,13 @@ export function TenantSwitcher({ tenants, currentSlug }: TenantSwitcherProps) {
       }
     }
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
+    if (!isOpen) return;
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
+
+
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>

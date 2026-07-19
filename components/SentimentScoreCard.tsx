@@ -32,7 +32,7 @@ export function SentimentScoreCard({
         <div className={`text-5xl font-bold ${getScoreColor(score)}`}>
           {score}%
         </div>
-        <p className="text-slate-400 text-sm mt-2">Overall Sentiment Score</p>
+        <p className="text-slate-400 text-sm mt-2">Audience Sentiment</p>
       </div>
 
       <div className="grid grid-cols-2 gap-6">

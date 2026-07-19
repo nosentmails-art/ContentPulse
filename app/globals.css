@@ -44,3 +44,111 @@ body {
     @apply bg-red-500/20 text-red-400;
   }
 }
+
+
+/* Print styles for report export */
+@media print {
+  /* Hide UI elements that shouldn't print */
+  .no-print,
+  [role="toolbar"],
+  button,
+  .sticky {
+    display: none !important;
+  }
+
+  /* Print report container: white background, black text */
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  .print-report {
+    max-width: 100%;
+    background-color: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Cards: white background with black borders */
+  .card {
+    background-color: white !important;
+    border-color: #333 !important;
+    color: black !important;
+    page-break-inside: avoid;
+  }
+
+  /* Text colors for print */
+  .text-white,
+  .text-slate-50,
+  .text-slate-300,
+  .text-slate-400,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    color: black !important;
+  }
+
+  /* Tables: readable black text on white */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    color: black !important;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+  }
+
+  /* Lists */
+  ul,
+  ol {
+    color: black !important;
+  }
+
+  /* Remove gradients and dark theme elements */
+  [className*="bg-gradient"],
+  [className*="from-slate"],
+  [className*="to-slate"],
+  [className*="via-slate"] {
+    background: none !important;
+    background-color: white !important;
+  }
+
+  /* Links visible in print */
+  a {
+    color: black !important;
+  }
+
+  /* Heading hierarchy */
+  h1 {
+    font-size: 24pt;
+    margin-bottom: 12pt;
+  }
+
+  h2 {
+    font-size: 18pt;
+    margin-top: 12pt;
+    margin-bottom: 10pt;
+  }
+
+  /* Prevent orphans/widows */
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+}
+

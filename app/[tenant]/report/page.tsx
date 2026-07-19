@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
@@ -113,10 +113,42 @@ const MOCK_REPORT_DATA = {
 export default function ReportPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
+  const [reportData, setReportData] = useState<any>(MOCK_REPORT_DATA);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const response = await fetch(`/api/${tenantSlug}/report`);
+        if (response.ok) {
+          const data = await response.json();
+          // Transform API response into ReportSection format if it has agents
+          if (data.agents && Array.isArray(data.agents)) {
+            const transformed: any = {
+              generated_at: data.generatedAt || new Date().toISOString(),
+            };
+            for (const agent of data.agents) {
+              transformed[agent.type] = {
+                status: agent.status,
+                data: agent.result || {},
+              };
+            }
+            setReportData(transformed);
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to fetch live report data, using mock data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [tenantSlug]);
 
   const handleExportPDF = () => {
-    toast.loading("Generating PDF...");
+    const id = toast.loading("Generating PDF...");
     setTimeout(() => {
+      toast.dismiss(id);
       window.print();
       toast.success("PDF ready to download");
     }, 1000);
@@ -128,16 +160,17 @@ export default function ReportPage() {
     toast.success("Share link copied to clipboard");
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="print-report min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 print:bg-white">
       {/* Top Bar */}
-      <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
+      <div className="no-print border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container-page flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href={`/${tenantSlug}`} className="hover:text-indigo-400 transition">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-2xl font-bold text-white">Content Intelligence Report</h1>
+            <h1 className="text-2xl font-bold text-white">Your Content Plan</h1>
           </div>
           <div className="flex gap-2">
             <button
@@ -145,7 +178,7 @@ export default function ReportPage() {
               className="btn-secondary flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Export PDF
+              Print Report
             </button>
             <button
               onClick={handleShareLink}
@@ -158,21 +191,23 @@ export default function ReportPage() {
         </div>
       </div>
 
+
       {/* Main Content */}
-      <div className="container-page py-12">
+      <div className="container-page py-12 print:py-0">
         <div className="mb-8">
           <p className="text-slate-400">
-            Report generated on{" "}
-            {new Date(MOCK_REPORT_DATA.generated_at).toLocaleDateString()}
+            Plan created on{" "}
+            {new Date(reportData.generated_at).toLocaleDateString()}
           </p>
         </div>
+
 
         {/* Sections */}
         <div className="space-y-8">
           {/* Sentiment Analysis */}
-          {MOCK_REPORT_DATA.SENTIMENT_ANALYSIS.status === "COMPLETED" && (
+          {reportData.SENTIMENT_ANALYSIS?.status === "COMPLETED" && (
             <SentimentScoreCard
-              {...MOCK_REPORT_DATA.SENTIMENT_ANALYSIS.data}
+              {...reportData.SENTIMENT_ANALYSIS.data}
             />
           )}
 
@@ -182,44 +217,45 @@ export default function ReportPage() {
               🎯 Recommended Content Opportunities
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {MOCK_REPORT_DATA.OPPORTUNITY_IDENTIFICATION.data.opportunities.map(
-                (opp, i) => (
+              {reportData.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
+                (opp: any, i: number) => (
                   <OpportunityCard key={i} {...opp} />
                 )
-              )}
+              ) || []}
+
             </div>
           </div>
 
           {/* Audience Intelligence */}
           <ReportSection
             agentType="AUDIENCE_INTELLIGENCE"
-            title="Audience Intelligence"
-            data={MOCK_REPORT_DATA.AUDIENCE_INTELLIGENCE.data}
-            status={MOCK_REPORT_DATA.AUDIENCE_INTELLIGENCE.status}
+            title="Audience Insights"
+            data={reportData.AUDIENCE_INTELLIGENCE?.data}
+            status={reportData.AUDIENCE_INTELLIGENCE?.status || "PENDING"}
           />
 
           {/* Channel Intelligence */}
           <ReportSection
             agentType="CHANNEL_CONTENT_INTELLIGENCE"
             title="Channel & Content Performance Matrix"
-            data={MOCK_REPORT_DATA.CHANNEL_CONTENT_INTELLIGENCE.data}
-            status={MOCK_REPORT_DATA.CHANNEL_CONTENT_INTELLIGENCE.status}
+            data={reportData.CHANNEL_CONTENT_INTELLIGENCE?.data}
+            status={reportData.CHANNEL_CONTENT_INTELLIGENCE?.status || "PENDING"}
           />
 
           {/* Gap Analysis */}
           <ReportSection
             agentType="GAP_ANALYSIS"
-            title="Content Gap Analysis"
-            data={MOCK_REPORT_DATA.GAP_ANALYSIS.data}
-            status={MOCK_REPORT_DATA.GAP_ANALYSIS.status}
+            title="Content Gaps & Opportunities"
+            data={reportData.GAP_ANALYSIS?.data}
+            status={reportData.GAP_ANALYSIS?.status || "PENDING"}
           />
 
           {/* Competitor Analysis */}
           <ReportSection
             agentType="COMPETITOR_ANALYSIS"
-            title="Competitor Analysis"
-            data={MOCK_REPORT_DATA.COMPETITOR_ANALYSIS.data}
-            status={MOCK_REPORT_DATA.COMPETITOR_ANALYSIS.status}
+            title="What Your Competitors Are Publishing"
+            data={reportData.COMPETITOR_ANALYSIS?.data}
+            status={reportData.COMPETITOR_ANALYSIS?.status || "PENDING"}
           />
         </div>
 

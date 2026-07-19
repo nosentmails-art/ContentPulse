@@ -10,9 +10,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { tenant: string } }
 ) {
-  // Resolve tenant from path parameter
+  try {
+    // Resolve tenant from path parameter
     const tenant = params.tenant;
-
 
     // Resolve tenant to tenant record
     const tenantRecord = await prisma.tenant.findUnique({
@@ -174,7 +174,7 @@ function synthesizeReport(agentReports: any[]): {
     }
   }
 
-  // Sort opportunities by priority BEFORE using them to build acquisitionStrategy
+  // Sort opportunities by priority
   const priorityMap = { critical: 0, high: 1, medium: 2, low: 3 };
   synthesis.priorityOpportunities.sort(
     (a, b) => (priorityMap[a.priority as keyof typeof priorityMap] ?? 99) - (priorityMap[b.priority as keyof typeof priorityMap] ?? 99)
@@ -188,7 +188,6 @@ function synthesizeReport(agentReports: any[]): {
     synthesis.acquisitionStrategy =
       'All agents have been executed. Review individual agent insights below for strategy recommendations.';
   }
-
 
   return synthesis;
 }

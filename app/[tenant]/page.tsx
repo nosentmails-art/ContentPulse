@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Play, Loader2 } from "lucide-react";
@@ -16,110 +16,6 @@ import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { toast } from "sonner";
 
 type AgentStatus = "IDLE" | "RUNNING" | "COMPLETED" | "ERROR";
-type MockAgent = {
-  agentType: string; name: string; description: string;
-  status: AgentStatus; enabled: boolean;
-  lastRun: string | null; resultPreview: string | null;
-  attributes: { key: string; label: string; enabled: boolean }[];
-};
-
-// Mock data while backend isn't ready
-const MOCK_AGENTS: MockAgent[] = [
-  {
-    agentType: "CONTENT_ANALYTICS",
-    name: "Content Analytics",
-    description: "Ingests and normalizes all channel data",
-    status: "COMPLETED",
-    enabled: true,
-    lastRun: "2 hours ago",
-    resultPreview: "127 content items analyzed across 3 channels",
-    attributes: [
-      { key: "linkedin", label: "Pull LinkedIn data", enabled: true },
-      { key: "youtube", label: "Pull YouTube data", enabled: true },
-      { key: "blog", label: "Pull Blog data", enabled: true },
-      { key: "email", label: "Pull Email data", enabled: false },
-    ],
-  },
-  {
-    agentType: "AUDIENCE_INTELLIGENCE",
-    name: "Audience Intelligence",
-    description: "Analyzes who is engaging with your content",
-    status: "COMPLETED",
-    enabled: true,
-    lastRun: "2 hours ago",
-    resultPreview: "3 distinct audience segments identified",
-    attributes: [
-      { key: "timing", label: "Engagement timing analysis", enabled: true },
-      { key: "segments", label: "Audience segment breakdown", enabled: true },
-      { key: "overlap", label: "Cross-channel overlap", enabled: false },
-    ],
-  },
-  {
-    agentType: "CHANNEL_CONTENT_INTELLIGENCE",
-    name: "Channel Intelligence",
-    description: "Which channel works best for which format",
-    status: "IDLE",
-    enabled: true,
-    lastRun: null,
-    resultPreview: null,
-    attributes: [
-      { key: "matrix", label: "Format performance matrix", enabled: true },
-      { key: "best_channel", label: "Best channel per content type", enabled: true },
-    ],
-  },
-  {
-    agentType: "SENTIMENT_ANALYSIS",
-    name: "Sentiment Analysis",
-    description: "Analyzes comments and reactions across channels",
-    status: "RUNNING",
-    enabled: true,
-    lastRun: "5 min ago",
-    resultPreview: null,
-    attributes: [
-      { key: "comments", label: "Comment sentiment scoring", enabled: true },
-      { key: "themes", label: "Key theme extraction", enabled: true },
-    ],
-  },
-  {
-    agentType: "GAP_ANALYSIS",
-    name: "Gap Analysis",
-    description: "Finds content gaps in your strategy",
-    status: "IDLE",
-    enabled: true,
-    lastRun: null,
-    resultPreview: null,
-    attributes: [
-      { key: "topics", label: "Topic gap identification", enabled: true },
-      { key: "formats", label: "Format gap analysis", enabled: true },
-    ],
-  },
-  {
-    agentType: "COMPETITOR_ANALYSIS",
-    name: "Competitor Analysis",
-    description: "Benchmarks your content against competitors",
-    status: "ERROR",
-    enabled: true,
-    lastRun: "1 day ago",
-    resultPreview: null,
-    attributes: [
-      { key: "topics", label: "Topic coverage comparison", enabled: true },
-      { key: "formats", label: "Format mix comparison", enabled: false },
-    ],
-  },
-  {
-    agentType: "OPPORTUNITY_IDENTIFICATION",
-    name: "Opportunity Finder",
-    description: "Recommends what to create next",
-    status: "IDLE",
-    enabled: false,
-    lastRun: null,
-    resultPreview: null,
-    attributes: [
-      { key: "topics", label: "Topic recommendations", enabled: true },
-      { key: "channels", label: "Channel expansion", enabled: true },
-    ],
-  },
-];
 
 const MOCK_TENANTS = [
   { id: "1", name: "DevInsights Blog", slug: "devinsights" },
@@ -129,14 +25,34 @@ const MOCK_TENANTS = [
 export default function TenantPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
-  const [agents, setAgents] = useState(MOCK_AGENTS);
+  const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [runningAgents, setRunningAgents] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch agents on mount
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/${tenantSlug}/agents`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.agents) {
+          setAgents(data.agents);
+        } else {
+          setError("Failed to load agents");
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load agents");
+        setLoading(false);
+      });
+  }, [tenantSlug]);
 
   const handleAgentToggle = (agentType: string) => {
     setAgents((prev) =>
       prev.map((agent) =>
-        agent.agentType === agentType
+        agent.type === agentType
           ? { ...agent, enabled: !agent.enabled }
           : agent
       )
@@ -146,10 +62,10 @@ export default function TenantPage() {
   const handleAttributeToggle = (agentType: string, attrKey: string) => {
     setAgents((prev) =>
       prev.map((agent) =>
-        agent.agentType === agentType
+        agent.type === agentType
           ? {
               ...agent,
-              attributes: agent.attributes.map((attr) =>
+              attributes: agent.attributes.map((attr: any) =>
                 attr.key === attrKey ? { ...attr, enabled: !attr.enabled } : attr
               ),
             }
@@ -158,64 +74,67 @@ export default function TenantPage() {
     );
   };
 
-  const handleRunAgent = (agentType: string) => {
-    // Simulate agent run
+  const handleRunAgent = async (agentType: string) => {
     setRunningAgents((prev) => new Set([...prev, agentType]));
-    toast.loading(`Running ${agentType}...`);
+    const id = toast.loading(`Analyzing ${agentType}...`);
 
-    // Simulate completion after 3 seconds
-    setTimeout(() => {
-      setAgents((prev) =>
-        prev.map((agent) =>
-          agent.agentType === agentType
-            ? {
-                ...agent,
-                status: "COMPLETED",
-                lastRun: "Just now",
-                resultPreview: `${agentType} analysis complete`,
-              }
-            : agent
-        )
-      );
+    try {
+      const res = await fetch(`/api/${tenantSlug}/agents/${agentType.toLowerCase()}/run`, {
+        method: "POST",
+      });
+      toast.dismiss(id);
+      if (!res.ok) {
+        toast.error(`${agentType} failed`);
+        return;
+      }
+      toast.success(`${agentType} analysis complete`);
+      const updated = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
+      setAgents(updated.agents ?? []);
+    } catch (e) {
+      toast.dismiss(id);
+      toast.error(`${agentType} failed`);
+    } finally {
       setRunningAgents((prev) => {
         const next = new Set(prev);
         next.delete(agentType);
         return next;
       });
-      toast.success(`${agentType} completed`);
-    }, 3000);
+    }
   };
 
   const handleRunAllEnabled = async () => {
     const enabledAgents = agents.filter((a) => a.enabled);
     setLoading(true);
-    toast.loading(`Running ${enabledAgents.length} agents...`);
+    const id = toast.loading(`Analyzing ${enabledAgents.length} items...`);
 
-    // Simulate running all agents
-    for (const agent of enabledAgents) {
-      setRunningAgents((prev) => new Set([...prev, agent.agentType]));
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setAgents((prev) =>
-        prev.map((a) =>
-          a.agentType === agent.agentType
-            ? {
-                ...a,
-                status: "COMPLETED",
-                lastRun: "Just now",
-                resultPreview: `${agent.agentType} complete`,
-              }
-            : a
-        )
-      );
-      setRunningAgents((prev) => {
-        const next = new Set(prev);
-        next.delete(agent.agentType);
-        return next;
-      });
+    try {
+      for (const agent of enabledAgents) {
+        setRunningAgents((prev) => new Set([...prev, agent.type]));
+        try {
+          await fetch(`/api/${tenantSlug}/agents/${agent.type.toLowerCase()}/run`, {
+            method: "POST",
+          });
+          const updated = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
+          setAgents(updated.agents ?? []);
+        } catch (e) {
+          toast.error(`${agent.type} failed`);
+        } finally {
+          setRunningAgents((prev) => {
+            const next = new Set(prev);
+            next.delete(agent.type);
+            return next;
+          });
+        }
+      }
+      setLoading(false);
+      toast.dismiss(id);
+      toast.success("All analyses complete");
+    } catch (error) {
+      console.error("Error running all agents:", error);
+      toast.dismiss(id);
+      toast.error("Failed to complete all analyses");
+      setLoading(false);
     }
-
-    setLoading(false);
-    toast.success("All agents completed");
   };
 
   return (
@@ -232,9 +151,9 @@ export default function TenantPage() {
       <div className="container-page py-12">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-4xl font-bold text-white mb-2">Content Intelligence Agents</h2>
+          <h2 className="text-4xl font-bold text-white mb-2">Your Content Command Center</h2>
           <p className="text-slate-400">
-            Deploy and orchestrate AI agents to analyze your content across channels
+            Select what to analyze, then run it in one click.
           </p>
         </div>
 
@@ -248,12 +167,12 @@ export default function TenantPage() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Running...
+                Analyzing...
               </>
             ) : (
               <>
                 <Play className="w-4 h-4" />
-                Run All Enabled Agents
+                Analyze Now
               </>
             )}
           </button>
@@ -263,12 +182,23 @@ export default function TenantPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {agents.map((agent) => (
             <AgentCard
-              key={agent.agentType}
-              {...agent}
-              detailHref={`/${tenantSlug}/agents/${agent.agentType.toLowerCase()}`}
-              onToggle={() => handleAgentToggle(agent.agentType)}
-              onAttributeToggle={(key) => handleAttributeToggle(agent.agentType, key)}
-              onRun={() => handleRunAgent(agent.agentType)}
+              key={agent.id}
+              agentType={agent.type}
+              name={agent.name}
+              description={agent.description}
+              enabled={agent.enabled}
+              status={agent.latestRun?.status ?? "IDLE"}
+              attributes={agent.attributes.map((attr: any) => ({
+                key: attr.key,
+                label: attr.label,
+                enabled: attr.enabled,
+              }))}
+              lastRun={agent.latestRun?.completedAt ? new Date(agent.latestRun.completedAt).toLocaleString() : null}
+              resultPreview={agent.latestRun?.resultJson ? "Analysis complete" : null}
+              detailHref={`/${tenantSlug}/agents/${agent.type.toLowerCase()}`}
+              onToggle={() => handleAgentToggle(agent.type)}
+              onAttributeToggle={(key) => handleAttributeToggle(agent.type, key)}
+              onRun={() => handleRunAgent(agent.type)}
             />
           ))}
         </div>
@@ -276,11 +206,11 @@ export default function TenantPage() {
         {/* Bottom Links */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
           <Link href={`/${tenantSlug}/connect`} className="text-indigo-400 hover:text-indigo-300">
-            → Connect Data Sources
+            → Import Your Content Data
           </Link>
           <span className="text-slate-700">•</span>
           <Link href={`/${tenantSlug}/report`} className="text-indigo-400 hover:text-indigo-300">
-            → View Report
+            → View Content Plan
           </Link>
         </div>
       </div>

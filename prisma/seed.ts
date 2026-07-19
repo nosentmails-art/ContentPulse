@@ -14,6 +14,7 @@ async function main() {
   await prisma.channelMetrics.deleteMany();
   await prisma.contentItem.deleteMany();
   await prisma.competitor.deleteMany();
+  await prisma.persona.deleteMany();
   await prisma.tenant.deleteMany();
 
   // Create Tenant 1: DevInsights Blog

@@ -8,6 +8,7 @@
 
 import prisma from '../db';
 import { mockLLMAnalyze } from './llm-helper';
+import { calculateBasicEngagement } from './utils';
 
 /**
  * Engagement metrics for a specific channel
@@ -189,6 +190,7 @@ function buildChannelDataSummary(
 
   for (const item of contentItems) {
     if (item.metrics) {
+      const engagement = calculateBasicEngagement(item.metrics);
       totalComments += item.metrics.comments || 0;
       totalLikes += item.metrics.likes || 0;
       totalShares += item.metrics.shares || 0;

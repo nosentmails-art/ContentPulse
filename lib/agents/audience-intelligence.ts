@@ -5,6 +5,7 @@
 
 import prisma from '../db';
 import { mockLLMAnalyze } from './llm-helper';
+import { calculateEngagement, calculateReach, toNumber } from './utils';
 
 type RawRow = Record<string, unknown>;
 
@@ -119,15 +120,6 @@ const PRIORITY_FIELDS = [
   'pain_point',
 ];
 
-function toNumber(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value.replace(/,/g, '').trim());
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
-
 function toText(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
@@ -190,23 +182,11 @@ function addObservation(
 ) {
   const raw = parseRawData(item.rawData);
   const metrics = item.metrics || {};
-  const impressions =
-    toNumber(metrics.impressions) ||
-    toNumber(metrics.reach) ||
-    toNumber(metrics.views) ||
-    toNumber(metrics.sessions);
+  const impressions = calculateReach(metrics);
   const clicks = toNumber(metrics.clicks);
   const conversions = toNumber(metrics.conversions);
   const leads = toNumber(metrics.leadsGenerated);
-  const engagement =
-    toNumber(metrics.likes) +
-    toNumber(metrics.comments) +
-    toNumber(metrics.shares) +
-    toNumber(metrics.upvotes) +
-    clicks +
-    conversions +
-    leads +
-    toNumber(metrics.subscribersGained);
+  const engagement = calculateEngagement(metrics);
   const contentType =
     item.contentType ||
     toText(raw.post_type) ||

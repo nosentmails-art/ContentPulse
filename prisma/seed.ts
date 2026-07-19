@@ -34,6 +34,26 @@ async function main() {
     },
   });
 
+  // Create additional tenants (8 more for total of 10)
+  const additionalTenants = [
+    { name: 'TechCrunch Clone', slug: 'techcrunch', niche: 'technology news' },
+    { name: 'Marketing Daily', slug: 'marketingdaily', niche: 'digital marketing' },
+    { name: 'DevTools Hub', slug: 'devtoolshub', niche: 'developer tools' },
+    { name: 'Startup Weekly', slug: 'startupweekly', niche: 'startup advice' },
+    { name: 'Cloud Insights', slug: 'cloudinsights', niche: 'cloud computing' },
+    { name: 'AI Frontiers', slug: 'aifrontiers', niche: 'artificial intelligence' },
+    { name: 'Data Science Daily', slug: 'datasciencedaily', niche: 'data science' },
+    { name: 'Security Brief', slug: 'securitybrief', niche: 'cybersecurity' },
+  ];
+
+  const createdTenants = [devInsights, growthStack];
+  for (const tenantData of additionalTenants) {
+    const tenant = await prisma.tenant.create({
+      data: tenantData,
+    });
+    createdTenants.push(tenant);
+  }
+
   // Helper function to create agents with attributes
   const createAgentWithAttributes = async (
     tenantId: string,
@@ -56,195 +76,107 @@ async function main() {
     return agent;
   };
 
-  // Create agents for devinsights tenant
-  console.log('Creating agents for devinsights...');
+  // Helper function to create all agents for a tenant
+  const createAgentsForTenant = async (tenantId: string) => {
+    await createAgentWithAttributes(
+      tenantId,
+      'CONTENT_ANALYTICS',
+      'Content Analytics',
+      'Analyzes content performance across channels',
+      [
+        { key: 'linkedin', label: 'Pull LinkedIn data', enabled: true },
+        { key: 'youtube', label: 'Pull YouTube data', enabled: true },
+        { key: 'blog', label: 'Pull Blog data', enabled: true },
+        { key: 'email', label: 'Pull Email Newsletter data', enabled: false },
+        { key: 'reddit', label: 'Pull Reddit data', enabled: false },
+        { key: 'ppc', label: 'Pull Google PPC data', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'CONTENT_ANALYTICS',
-    'Content Analytics',
-    'Analyzes content performance across channels',
-    [
-      { key: 'linkedin', label: 'Pull LinkedIn data', enabled: true },
-      { key: 'youtube', label: 'Pull YouTube data', enabled: true },
-      { key: 'blog', label: 'Pull Blog data', enabled: true },
-      { key: 'email', label: 'Pull Email Newsletter data', enabled: false },
-      { key: 'reddit', label: 'Pull Reddit data', enabled: false },
-      { key: 'ppc', label: 'Pull Google PPC data', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'AUDIENCE_INTELLIGENCE',
+      'Audience Intelligence',
+      'Identifies audience segments and engagement patterns',
+      [
+        { key: 'timing', label: 'Engagement timing analysis', enabled: true },
+        { key: 'segments', label: 'Audience segment breakdown', enabled: true },
+        { key: 'top_type', label: 'Top engaged audience type', enabled: true },
+        { key: 'demographics', label: 'Demographic patterns and trends', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'AUDIENCE_INTELLIGENCE',
-    'Audience Intelligence',
-    'Identifies audience segments and engagement patterns',
-    [
-      { key: 'timing', label: 'Engagement timing analysis', enabled: true },
-      { key: 'segments', label: 'Audience segment breakdown', enabled: true },
-      { key: 'top_type', label: 'Top engaged audience type', enabled: true },
-      { key: 'demographics', label: 'Demographic patterns and trends', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'CHANNEL_CONTENT_INTELLIGENCE',
+      'Channel Content Intelligence',
+      'Analyzes format and channel performance combinations',
+      [
+        { key: 'channel_format_combo', label: 'Channel-format combination analysis', enabled: true },
+        { key: 'top_channels', label: 'Top performing channels', enabled: true },
+        { key: 'top_formats', label: 'Top performing content formats', enabled: true },
+        { key: 'cross_channel_strategy', label: 'Cross-channel strategy recommendations', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'CHANNEL_CONTENT_INTELLIGENCE',
-    'Channel Content Intelligence',
-    'Analyzes format and channel performance combinations',
-    [
-      { key: 'channel_format_combo', label: 'Channel-format combination analysis', enabled: true },
-      { key: 'top_channels', label: 'Top performing channels', enabled: true },
-      { key: 'top_formats', label: 'Top performing content formats', enabled: true },
-      { key: 'cross_channel_strategy', label: 'Cross-channel strategy recommendations', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'SENTIMENT_ANALYSIS',
+      'Sentiment Analysis',
+      'Analyzes audience sentiment from comments and reactions',
+      [
+        { key: 'sentiment_score', label: 'Overall sentiment scoring', enabled: true },
+        { key: 'themes', label: 'Sentiment themes extraction', enabled: true },
+        { key: 'audience_tone', label: 'Audience emotional tone', enabled: true },
+        { key: 'recommendations', label: 'Sentiment-based recommendations', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'SENTIMENT_ANALYSIS',
-    'Sentiment Analysis',
-    'Analyzes audience sentiment from comments and reactions',
-    [
-      { key: 'sentiment_score', label: 'Overall sentiment scoring', enabled: true },
-      { key: 'themes', label: 'Sentiment themes extraction', enabled: true },
-      { key: 'audience_tone', label: 'Audience emotional tone', enabled: true },
-      { key: 'recommendations', label: 'Sentiment-based recommendations', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'GAP_ANALYSIS',
+      'Gap & Opportunity Analysis',
+      'Finds content strategy gaps and turns them into recommended opportunities',
+      [
+        { key: 'topics', label: 'Topic gap identification', enabled: true },
+        { key: 'formats', label: 'Format gap analysis', enabled: true },
+        { key: 'seasonal', label: 'Seasonal opportunity detection', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'GAP_ANALYSIS',
-    'Gap & Opportunity Analysis',
-    'Finds content strategy gaps and turns them into recommended opportunities',
-    [
-      { key: 'topics', label: 'Topic gap identification', enabled: true },
-      { key: 'formats', label: 'Format gap analysis', enabled: true },
-      { key: 'seasonal', label: 'Seasonal opportunity detection', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'COMPETITOR_ANALYSIS',
+      'Competitor Analysis',
+      'Compares your content with competitors',
+      [
+        { key: 'coverage_gaps', label: 'Topic coverage gaps vs competitors', enabled: true },
+        { key: 'competitor_strengths', label: 'Competitor strengths analysis', enabled: true },
+        { key: 'your_advantages', label: 'Your competitive advantages', enabled: true },
+        { key: 'market_positioning', label: 'Market positioning strategy', enabled: false },
+      ]
+    );
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'COMPETITOR_ANALYSIS',
-    'Competitor Analysis',
-    'Compares your content with competitors',
-    [
-      { key: 'coverage_gaps', label: 'Topic coverage gaps vs competitors', enabled: true },
-      { key: 'competitor_strengths', label: 'Competitor strengths analysis', enabled: true },
-      { key: 'your_advantages', label: 'Your competitive advantages', enabled: true },
-      { key: 'market_positioning', label: 'Market positioning strategy', enabled: false },
-    ]
-  );
+    await createAgentWithAttributes(
+      tenantId,
+      'OPPORTUNITY_IDENTIFICATION',
+      'Opportunity Identification',
+      'Identifies high-impact content opportunities',
+      [
+        { key: 'high_impact_topics', label: 'High-impact topic recommendations', enabled: true },
+        { key: 'format_channel_strategy', label: 'Best format-channel combinations', enabled: true },
+        { key: 'urgency', label: 'Opportunity urgency ranking', enabled: true },
+        { key: 'content_gaps', label: 'Content gap analysis', enabled: false },
+      ]
+    );
+  };
 
-  await createAgentWithAttributes(
-    devInsights.id,
-    'OPPORTUNITY_IDENTIFICATION',
-    'Opportunity Identification',
-    'Identifies high-impact content opportunities',
-    [
-      { key: 'high_impact_topics', label: 'High-impact topic recommendations', enabled: true },
-      { key: 'format_channel_strategy', label: 'Best format-channel combinations', enabled: true },
-      { key: 'urgency', label: 'Opportunity urgency ranking', enabled: true },
-      { key: 'content_gaps', label: 'Content gap analysis', enabled: false },
-    ]
-  );
-
-  // Create agents for growthstack tenant
-  console.log('Creating agents for growthstack...');
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'CONTENT_ANALYTICS',
-    'Content Analytics',
-    'Analyzes content performance across channels',
-    [
-      { key: 'linkedin', label: 'Pull LinkedIn data', enabled: true },
-      { key: 'youtube', label: 'Pull YouTube data', enabled: true },
-      { key: 'blog', label: 'Pull Blog data', enabled: true },
-      { key: 'email', label: 'Pull Email Newsletter data', enabled: false },
-      { key: 'reddit', label: 'Pull Reddit data', enabled: false },
-      { key: 'ppc', label: 'Pull Google PPC data', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'AUDIENCE_INTELLIGENCE',
-    'Audience Intelligence',
-    'Identifies audience segments and engagement patterns',
-    [
-      { key: 'timing', label: 'Engagement timing analysis', enabled: true },
-      { key: 'segments', label: 'Audience segment breakdown', enabled: true },
-      { key: 'top_type', label: 'Top engaged audience type', enabled: true },
-      { key: 'demographics', label: 'Demographic patterns and trends', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'CHANNEL_CONTENT_INTELLIGENCE',
-    'Channel Content Intelligence',
-    'Analyzes format and channel performance combinations',
-    [
-      { key: 'channel_format_combo', label: 'Channel-format combination analysis', enabled: true },
-      { key: 'top_channels', label: 'Top performing channels', enabled: true },
-      { key: 'top_formats', label: 'Top performing content formats', enabled: true },
-      { key: 'cross_channel_strategy', label: 'Cross-channel strategy recommendations', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'SENTIMENT_ANALYSIS',
-    'Sentiment Analysis',
-    'Analyzes audience sentiment from comments and reactions',
-    [
-      { key: 'sentiment_score', label: 'Overall sentiment scoring', enabled: true },
-      { key: 'themes', label: 'Sentiment themes extraction', enabled: true },
-      { key: 'audience_tone', label: 'Audience emotional tone', enabled: true },
-      { key: 'recommendations', label: 'Sentiment-based recommendations', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'GAP_ANALYSIS',
-    'Gap & Opportunity Analysis',
-    'Finds content strategy gaps and turns them into recommended opportunities',
-    [
-      { key: 'topics', label: 'Topic gap identification', enabled: true },
-      { key: 'formats', label: 'Format gap analysis', enabled: true },
-      { key: 'seasonal', label: 'Seasonal opportunity detection', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'COMPETITOR_ANALYSIS',
-    'Competitor Analysis',
-    'Compares your content with competitors',
-    [
-      { key: 'coverage_gaps', label: 'Topic coverage gaps vs competitors', enabled: true },
-      { key: 'competitor_strengths', label: 'Competitor strengths analysis', enabled: true },
-      { key: 'your_advantages', label: 'Your competitive advantages', enabled: true },
-      { key: 'market_positioning', label: 'Market positioning strategy', enabled: false },
-    ]
-  );
-
-  await createAgentWithAttributes(
-    growthStack.id,
-    'OPPORTUNITY_IDENTIFICATION',
-    'Opportunity Identification',
-    'Identifies high-impact content opportunities',
-    [
-      { key: 'high_impact_topics', label: 'High-impact topic recommendations', enabled: true },
-      { key: 'format_channel_strategy', label: 'Best format-channel combinations', enabled: true },
-      { key: 'urgency', label: 'Opportunity urgency ranking', enabled: true },
-      { key: 'content_gaps', label: 'Content gap analysis', enabled: false },
-    ]
-  );
+  // Create agents for all tenants
+  console.log('Creating agents for all tenants...');
+  for (const tenant of createdTenants) {
+    console.log(`Creating agents for ${tenant.name}...`);
+    await createAgentsForTenant(tenant.id);
+  }
 
   // Seed ContentItems for devinsights
   console.log('Seeding content for devinsights...');

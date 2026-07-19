@@ -526,10 +526,67 @@ function renderGapAnalysis(data: any): React.ReactNode {
 function renderCompetitorAnalysis(data: any): React.ReactNode {
   return (
     <div className="space-y-6">
-      {data.competitors && (
+      {data.summary && (
+        <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+          <p className="text-sm font-semibold text-slate-300 mb-2">Summary</p>
+          <p className="text-white">{data.summary}</p>
+        </div>
+      )}
+
+      {data.gaps && data.gaps.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Competitor Comparison</h3>
-          {renderTable(data.competitors)}
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">Content Gaps</h3>
+          <div className="space-y-3">
+            {data.gaps.map((gap: any, idx: number) => (
+              <div key={idx} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                <p className="font-semibold text-white mb-2">{gap.topic}</p>
+                <div className="grid grid-cols-2 gap-3 text-sm mb-2">
+                  <div>
+                    <p className="text-slate-400">Competitor Coverage</p>
+                    <p className="text-white">{gap.competitorCoverage}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Your Coverage</p>
+                    <p className="text-white">{gap.yourCoverage}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300">{gap.opportunity}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.theirStrengths && data.theirStrengths.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">Competitor Strengths</h3>
+          <div className="space-y-2">
+            {data.theirStrengths.map((strength: string, idx: number) => (
+              <div key={idx} className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                <p className="text-sm text-red-200">{strength}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.yourAdvantages && data.yourAdvantages.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-slate-300 mb-4">Your Competitive Advantages</h3>
+          <div className="space-y-2">
+            {data.yourAdvantages.map((advantage: string, idx: number) => (
+              <div key={idx} className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                <p className="text-sm text-green-200">{advantage}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.topRecommendation && (
+        <div className="p-4 bg-indigo-500/10 rounded-lg border border-indigo-500/30">
+          <p className="text-sm font-semibold text-indigo-300 mb-2">Top Recommendation</p>
+          <p className="text-white">{data.topRecommendation}</p>
         </div>
       )}
     </div>

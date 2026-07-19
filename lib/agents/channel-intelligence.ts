@@ -5,6 +5,7 @@
 
 import prisma from '../db';
 import { mockLLMAnalyze } from './llm-helper';
+import { calculateEngagement, calculateReach, toNumber } from './utils';
 
 type ContentWithMetrics = {
   channel: string;
@@ -62,38 +63,12 @@ export interface AgentResult {
   error?: string;
 }
 
-function toNumber(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value.replace(/,/g, '').trim());
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-}
-
 function engagementFor(item: ContentWithMetrics): number {
-  const metrics = item.metrics || {};
-  return (
-    toNumber(metrics.likes) +
-    toNumber(metrics.comments) +
-    toNumber(metrics.shares) +
-    toNumber(metrics.upvotes) +
-    toNumber(metrics.clicks) +
-    toNumber(metrics.conversions) +
-    toNumber(metrics.leadsGenerated) +
-    toNumber(metrics.subscribersGained)
-  );
+  return calculateEngagement(item.metrics);
 }
 
 function reachFor(item: ContentWithMetrics): number {
-  const metrics = item.metrics || {};
-  return (
-    toNumber(metrics.impressions) ||
-    toNumber(metrics.reach) ||
-    toNumber(metrics.views) ||
-    toNumber(metrics.sessions) ||
-    0
-  );
+  return calculateReach(item.metrics);
 }
 
 function calculatePerformanceScore(totalContent: number, engagementRate: number, acquisitionSignals: number): number {

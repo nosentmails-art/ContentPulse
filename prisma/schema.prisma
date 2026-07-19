@@ -119,11 +119,13 @@ model Competitor {
 model Persona {
   id          String   @id @default(cuid())
   tenantId    String
-  personaId   String   @unique
+  personaId   String
   name        String
   description String?
   keywords    String   // JSON array of keywords for matching
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, personaId])
 }

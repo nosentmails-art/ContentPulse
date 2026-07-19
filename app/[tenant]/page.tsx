@@ -17,15 +17,11 @@ import { toast } from "sonner";
 
 type AgentStatus = "IDLE" | "RUNNING" | "COMPLETED" | "ERROR";
 
-const MOCK_TENANTS = [
-  { id: "1", name: "DevInsights Blog", slug: "devinsights" },
-  { id: "2", name: "GrowthStack Weekly", slug: "growthstack" },
-];
-
 export default function TenantPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
   const [agents, setAgents] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [runningAgents, setRunningAgents] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +44,16 @@ export default function TenantPage() {
         setLoading(false);
       });
   }, [tenantSlug]);
+
+  // Fetch tenants for switcher
+  useEffect(() => {
+    fetch("/api/tenants")
+      .then((res) => res.json())
+      .then((data) => {
+        setTenants(Array.isArray(data) ? data : data.tenants ?? []);
+      })
+      .catch(() => setTenants([]));
+  }, []);
 
   const handleAgentToggle = (agentType: string) => {
     setAgents((prev) =>
@@ -143,7 +149,7 @@ export default function TenantPage() {
       <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container-page flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">ContentPulse</h1>
-          <TenantSwitcher tenants={MOCK_TENANTS} currentSlug={tenantSlug} />
+          <TenantSwitcher tenants={tenants} currentSlug={tenantSlug} />
         </div>
       </div>
 

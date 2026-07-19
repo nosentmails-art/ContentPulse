@@ -19,7 +19,7 @@ export async function POST(
 ) {
   try {
     const slug = params.tenant;
-    const { agentType } = params;
+    const agentType = params.agentType.toUpperCase();
 
     // Resolve slug to tenant
     const tenant = await prisma.tenant.findUnique({

@@ -113,7 +113,7 @@ const MOCK_REPORT_DATA = {
 export default function ReportPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
-  const [reportData, setReportData] = useState<any>(MOCK_REPORT_DATA);
+  const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -197,7 +197,7 @@ export default function ReportPage() {
         <div className="mb-8">
           <p className="text-slate-400">
             Plan created on{" "}
-            {new Date(reportData.generated_at).toLocaleDateString()}
+            {reportData?.generated_at ? new Date(reportData?.generated_at).toLocaleDateString() : "—"}
           </p>
         </div>
 
@@ -205,9 +205,9 @@ export default function ReportPage() {
         {/* Sections */}
         <div className="space-y-8">
           {/* Sentiment Analysis */}
-          {reportData.SENTIMENT_ANALYSIS?.status === "COMPLETED" && (
+          {reportData?.SENTIMENT_ANALYSIS?.status === "COMPLETED" && (
             <SentimentScoreCard
-              {...reportData.SENTIMENT_ANALYSIS.data}
+              {...reportData?.SENTIMENT_ANALYSIS.data}
             />
           )}
 
@@ -217,7 +217,7 @@ export default function ReportPage() {
               🎯 Recommended Content Opportunities
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reportData.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
+              {reportData?.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
                 (opp: any, i: number) => (
                   <OpportunityCard key={i} {...opp} />
                 )
@@ -230,32 +230,32 @@ export default function ReportPage() {
           <ReportSection
             agentType="AUDIENCE_INTELLIGENCE"
             title="Audience Insights"
-            data={reportData.AUDIENCE_INTELLIGENCE?.data}
-            status={reportData.AUDIENCE_INTELLIGENCE?.status || "PENDING"}
+            data={reportData?.AUDIENCE_INTELLIGENCE?.data}
+            status={reportData?.AUDIENCE_INTELLIGENCE?.status || "PENDING"}
           />
 
           {/* Channel Intelligence */}
           <ReportSection
             agentType="CHANNEL_CONTENT_INTELLIGENCE"
             title="Channel & Content Performance Matrix"
-            data={reportData.CHANNEL_CONTENT_INTELLIGENCE?.data}
-            status={reportData.CHANNEL_CONTENT_INTELLIGENCE?.status || "PENDING"}
+            data={reportData?.CHANNEL_CONTENT_INTELLIGENCE?.data}
+            status={reportData?.CHANNEL_CONTENT_INTELLIGENCE?.status || "PENDING"}
           />
 
           {/* Gap Analysis */}
           <ReportSection
             agentType="GAP_ANALYSIS"
             title="Content Gaps & Opportunities"
-            data={reportData.GAP_ANALYSIS?.data}
-            status={reportData.GAP_ANALYSIS?.status || "PENDING"}
+            data={reportData?.GAP_ANALYSIS?.data}
+            status={reportData?.GAP_ANALYSIS?.status || "PENDING"}
           />
 
           {/* Competitor Analysis */}
           <ReportSection
             agentType="COMPETITOR_ANALYSIS"
             title="What Your Competitors Are Publishing"
-            data={reportData.COMPETITOR_ANALYSIS?.data}
-            status={reportData.COMPETITOR_ANALYSIS?.status || "PENDING"}
+            data={reportData?.COMPETITOR_ANALYSIS?.data}
+            status={reportData?.COMPETITOR_ANALYSIS?.status || "PENDING"}
           />
         </div>
 

@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Play } from "lucide-react";
+import { ReportSection } from "@/components/ReportSection";
 import {
   BarChart3,
   Users,
@@ -152,18 +153,25 @@ export default function AgentDetailPage() {
     const id = toast.loading("Analyzing...");
 
     try {
-      await fetch(`/api/${tenantSlug}/agents/${agentTypeParam.toLowerCase()}/run`, {
+      const res = await fetch(`/api/${tenantSlug}/agents/${agentTypeParam.toLowerCase()}/run`, {
         method: "POST",
       });
-      toast.dismiss(id);
-      toast.success("Analysis complete");
-      setAgentStatus("COMPLETED");
-      const data = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
-      const found = data.agents?.find((a: any) => a.type === agentTypeParam);
-      if (found) {
-        setAgentData(found);
-        setRuns(found.runs ?? []);
-        setAgentStatus(found.latestRun?.status ?? "IDLE");
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.dismiss(id);
+        toast.error(result.error || "Analysis failed");
+        setAgentStatus("ERROR");
+      } else {
+        toast.dismiss(id);
+        toast.success("Analysis complete");
+        const data = await fetch(`/api/${tenantSlug}/agents`).then((r) => r.json());
+        const found = data.agents?.find((a: any) => a.type === agentTypeParam);
+        if (found) {
+          setAgentData(found);
+          setAttributes(found.attributes ?? []);
+          setRuns(found.runs ?? []);
+          setAgentStatus(found.latestRun?.status ?? "IDLE");
+        }
       }
     } catch (e) {
       toast.dismiss(id);
@@ -234,12 +242,12 @@ export default function AgentDetailPage() {
 
         {/* Latest Result */}
         {agentData?.latestRun?.resultJson && (
-          <div className="card mb-8">
-            <h3 className="text-xl font-bold text-white mb-6">Latest Result</h3>
-            <pre className="bg-slate-900 p-4 rounded-lg overflow-x-auto text-xs text-slate-300 border border-slate-700">
-              {JSON.stringify(JSON.parse(agentData.latestRun.resultJson), null, 2)}
-            </pre>
-          </div>
+          <ReportSection
+            agentType={agentTypeParam}
+            title="Latest Result"
+            data={JSON.parse(agentData.latestRun.resultJson)}
+            status={agentData.latestRun.status || "COMPLETED"}
+          />
         )}
 
         {/* Run History */}

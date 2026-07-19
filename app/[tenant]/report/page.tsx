@@ -148,12 +148,7 @@ export default function ReportPage() {
   }, [tenantSlug]);
 
   const handleExportPDF = () => {
-    const id = toast.loading("Generating PDF...");
-    setTimeout(() => {
-      toast.dismiss(id);
-      window.print();
-      toast.success("PDF ready to download");
-    }, 1000);
+    window.print();
   };
 
   const handleShareLink = () => {
@@ -169,7 +164,7 @@ export default function ReportPage() {
       <div className="no-print border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container-page flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href={`/${tenantSlug}`} className="hover:text-indigo-400 transition">
+            <Link href="/" className="hover:text-indigo-400 transition">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-2xl font-bold text-white">Your Content Plan</h1>

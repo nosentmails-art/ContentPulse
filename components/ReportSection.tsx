@@ -238,11 +238,11 @@ function renderAudienceIntelligence(data: any): React.ReactNode {
                   </div>
                   <div>
                     <p className="text-slate-400">Strong Content Types</p>
-                    <p className="text-white">{persona.topContentTypes?.join(", ") || "Not available"}</p>
+                    <p className="text-white">{persona.topContentTypes?.map((t: string) => t === 'text' ? 'post' : t).join(", ") || "Not available"}</p>
                   </div>
                   <div>
                     <p className="text-slate-400">Weak Content Types</p>
-                    <p className="text-white">{persona.weakContentTypes?.join(", ") || "None observed"}</p>
+                    <p className="text-white">{persona.weakContentTypes?.map((t: string) => t === 'text' ? 'post' : t).join(", ") || "None observed"}</p>
                   </div>
                   <div>
                     <p className="text-slate-400">Top Channels</p>

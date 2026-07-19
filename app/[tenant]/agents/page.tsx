@@ -71,8 +71,8 @@ const AGENTS: Agent[] = [
   {
     id: "5",
     agentType: "GAP_ANALYSIS",
-    name: "Gap Analysis",
-    description: "Identifies missing content topics and opportunities",
+    name: "Gap & Opportunity Analysis",
+    description: "Finds content strategy gaps and turns them into recommended opportunities",
     enabled: false,
     status: "IDLE",
     lastRun: null,
@@ -85,15 +85,6 @@ const AGENTS: Agent[] = [
     enabled: true,
     status: "COMPLETED",
     lastRun: "30 minutes ago",
-  },
-  {
-    id: "7",
-    agentType: "OPPORTUNITY_IDENTIFICATION",
-    name: "Opportunity Finder",
-    description: "Identifies content and engagement opportunities",
-    enabled: true,
-    status: "IDLE",
-    lastRun: "3 hours ago",
   },
 ];
 

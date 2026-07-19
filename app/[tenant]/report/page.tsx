@@ -243,6 +243,8 @@ export default function ReportPage() {
             />
           )}
 
+          {false && (
+          <>
           {/* Opportunities */}
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">
@@ -257,6 +259,9 @@ export default function ReportPage() {
 
             </div>
           </div>
+
+          </>
+          )}
 
           {/* Content Analytics */}
           <ReportSection

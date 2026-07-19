@@ -40,6 +40,7 @@ export async function GET(
 
     // Parse agent results
     const agentReports = agents
+      .filter((agent) => agent.type !== 'OPPORTUNITY_IDENTIFICATION')
       .filter((agent) => agent.runs.length > 0)
       .map((agent) => {
         const latestRun = agent.runs[0];
@@ -137,11 +138,12 @@ function synthesizeReport(agentReports: any[]): {
         break;
 
       case 'GAP_ANALYSIS':
-        if (report.result.topGaps?.[0]) {
-          synthesis.keyMetrics.contentGapOpportunity = report.result.topGaps[0];
+        if (report.result.strategyGaps?.[0]) {
+          synthesis.keyMetrics.contentGapOpportunity = report.result.strategyGaps[0].topic;
           synthesis.priorityOpportunities.push({
-            type: 'Content Gap',
-            recommendation: report.result.topRecommendation,
+            type: 'Gap & Opportunity',
+            recommendation: report.result.nextBestAction || report.result.opportunities?.[0]?.suggestedTitle,
+            reason: report.result.opportunities?.[0]?.reason,
             priority: 'high',
           });
         }
@@ -158,19 +160,6 @@ function synthesizeReport(agentReports: any[]): {
         }
         break;
 
-      case 'OPPORTUNITY_IDENTIFICATION':
-        if (report.result.opportunities?.[0]) {
-          synthesis.priorityOpportunities.push({
-            type: 'Market Opportunity',
-            recommendation: report.result.opportunities[0].suggestedTitle,
-            reason: report.result.opportunities[0].reason,
-            priority: report.result.opportunities[0].urgency === 'hot' ? 'critical' : 'high',
-          });
-        }
-        if (report.result.priorityAction) {
-          synthesis.nextActions.push(`Priority: ${report.result.priorityAction}`);
-        }
-        break;
     }
   }
 

@@ -71,11 +71,12 @@ const DEFAULT_AGENT_CONFIG: Record<string, { name: string; description: string; 
     ],
   },
   GAP_ANALYSIS: {
-    name: "Gap Analysis",
-    description: "Finds content gaps in your strategy",
+    name: "Gap & Opportunity Analysis",
+    description: "Finds content strategy gaps and recommended opportunities",
     defaultAttributes: [
       { key: "topics", label: "Topic gap identification", enabled: true },
       { key: "formats", label: "Format gap analysis", enabled: true },
+      { key: "opportunities", label: "Recommended opportunities", enabled: true },
     ],
   },
   COMPETITOR_ANALYSIS: {

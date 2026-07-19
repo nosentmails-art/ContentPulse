@@ -71,11 +71,12 @@ const DEFAULT_AGENT_CONFIG: Record<string, { name: string; description: string; 
     ],
   },
   GAP_ANALYSIS: {
-    name: "Gap Analysis",
-    description: "Finds content gaps in your strategy",
+    name: "Gap & Opportunity Analysis",
+    description: "Finds content strategy gaps and recommended opportunities",
     defaultAttributes: [
       { key: "topics", label: "Topic gap identification", enabled: true },
       { key: "formats", label: "Format gap analysis", enabled: true },
+      { key: "opportunities", label: "Recommended opportunities", enabled: true },
     ],
   },
   COMPETITOR_ANALYSIS: {
@@ -242,12 +243,16 @@ export default function AgentDetailPage() {
 
         {/* Latest Result */}
         {agentData?.latestRun?.resultJson && (
-          <ReportSection
-            agentType={agentTypeParam}
-            title="Latest Result"
-            data={JSON.parse(agentData.latestRun.resultJson)}
-            status={agentData.latestRun.status || "COMPLETED"}
-          />
+          <div className="card mb-8">
+            <h3 className="text-xl font-bold text-white mb-6">Latest Result</h3>
+            <ReportSection
+              agentType={agentTypeParam}
+              title="Analysis Output"
+              data={JSON.parse(agentData.latestRun.resultJson)}
+              status={agentData.latestRun.status || "COMPLETED"}
+              source="AI-generated analysis"
+            />
+          </div>
         )}
 
         {/* Run History */}

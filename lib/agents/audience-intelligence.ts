@@ -1,16 +1,68 @@
 /**
  * Audience Intelligence Agent
- * Analyzes audience segments, engagement patterns, and demographic insights
+ * Uses uploaded engagement data and optional platform audience fields.
  */
 
 import prisma from '../db';
 import { mockLLMAnalyze } from './llm-helper';
 
-/**
- * Result interface for audience intelligence analysis
- */
+type RawRow = Record<string, unknown>;
+
+interface Aggregate {
+  label: string;
+  contentCount: number;
+  impressions: number;
+  engagement: number;
+  clicks: number;
+  conversions: number;
+  leads: number;
+  score: number;
+  contentTypes: Map<string, number>;
+  weakContentTypes: Map<string, number>;
+  demographics: Record<string, Map<string, number>>;
+  sources: Set<string>;
+}
+
 export interface AudienceIntelligenceResult {
   summary: string;
+  personaEngagement: Array<{
+    personaId: string;
+    name: string;
+    contentCount: number;
+    currentEngagement: number;
+    currentEngagementRate: string;
+    topContentTypes: string[];
+    weakContentTypes: string[];
+    topChannels: string[];
+    observedSignals: Record<string, string[]>;
+    recommendation: string;
+  }>;
+  observedSegments: Array<{
+    segmentName: string;
+    segmentType: string;
+    whyThisSegmentExists: string;
+    observedDemographics: Record<string, string[]>;
+    topChannels: string[];
+    contentTypesEngagingWith: string[];
+    currentEngagement: number;
+    currentEngagementRate: string;
+    acquisitionSignals: string[];
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  }>;
+  demographicInsights: Array<{
+    field: string;
+    topValues: string[];
+    source: 'observed';
+  }>;
+  dataQuality: {
+    rowsAnalyzed: number;
+    channelsWithData: number;
+    optionalAudienceFieldsFound: string[];
+    missingUsefulFields: string[];
+    note: string;
+  };
+  topInsight: string;
+  recommendation: string;
   segments: Array<{
     name: string;
     description: string;
@@ -18,228 +70,457 @@ export interface AudienceIntelligenceResult {
     bestTime: string;
     engagementRate: string;
   }>;
-  topInsight: string;
-  recommendation: string;
 }
 
-/**
- * Agent result wrapper
- */
 export interface AgentResult {
   success: boolean;
   data?: AudienceIntelligenceResult;
   error?: string;
 }
 
-const SYSTEM_PROMPT =
-  'You are a senior content strategist and data analyst with 10 years of experience. Analyze the provided data and generate specific, numbered, actionable insights. Always cite specific numbers. Output ONLY valid JSON matching the specified format exactly.';
+const AUDIENCE_FIELDS = [
+  'age_group',
+  'gender',
+  'country',
+  'region',
+  'city',
+  'job_title',
+  'seniority',
+  'department',
+  'industry',
+  'company_size',
+  'follower_type',
+  'subscribed_status',
+  'new_vs_returning_viewers',
+  'new_vs_returning',
+  'traffic_source',
+  'device_type',
+  'browser',
+  'lifecycle_stage',
+  'audience_segment',
+  'lead_quality',
+  'flair',
+  'theme',
+  'sentiment',
+  'pain_point',
+];
 
-/**
- * Builds a data summary from ContentItems and ChannelMetrics for the tenant
- */
-async function buildDataSummary(
-  tenantId: string,
-  enabledAttributes: string[]
-): Promise<string> {
-  const contentItems = await prisma.contentItem.findMany({
-    where: { tenantId },
-    include: { metrics: true },
-    take: 100,
-  });
+const PRIORITY_FIELDS = [
+  'audience_segment',
+  'job_title',
+  'seniority',
+  'age_group',
+  'country',
+  'traffic_source',
+  'device_type',
+  'lifecycle_stage',
+  'subscribed_status',
+  'theme',
+  'pain_point',
+];
 
-  if (contentItems.length === 0) {
-    return 'No content data available for analysis.';
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/,/g, '').trim());
+    return Number.isFinite(parsed) ? parsed : 0;
   }
-
-  let summary = 'Content and Audience Data Summary:\n\n';
-
-  // Group by channel
-  const byChannel = contentItems.reduce(
-    (acc, item) => {
-      if (!acc[item.channel]) {
-        acc[item.channel] = [];
-      }
-      acc[item.channel].push(item);
-      return acc;
-    },
-    {} as Record<string, typeof contentItems>
-  );
-
-  for (const [channel, items] of Object.entries(byChannel)) {
-    summary += `Channel: ${channel}\n`;
-    summary += `  Total content pieces: ${items.length}\n`;
-
-    // Aggregate metrics
-    let totalImpressions = 0;
-    let totalEngagement = 0;
-    let totalLikes = 0;
-    let totalComments = 0;
-    let totalShares = 0;
-    let itemsWithMetrics = 0;
-
-    for (const item of items) {
-      if (item.metrics) {
-        itemsWithMetrics++;
-        totalImpressions += item.metrics.impressions || 0;
-        totalLikes += item.metrics.likes || 0;
-        totalComments += item.metrics.comments || 0;
-        totalShares += item.metrics.shares || 0;
-        totalEngagement += (item.metrics.likes || 0) + (item.metrics.comments || 0) + (item.metrics.shares || 0);
-      }
-    }
-
-    if (itemsWithMetrics > 0) {
-      const avgEngagementRate = totalImpressions > 0
-        ? ((totalEngagement / totalImpressions) * 100).toFixed(2)
-        : '0.00';
-      summary += `  Total impressions: ${totalImpressions.toFixed(0)}\n`;
-      summary += `  Total engagement: ${totalEngagement.toFixed(0)} (likes: ${totalLikes.toFixed(0)}, comments: ${totalComments.toFixed(0)}, shares: ${totalShares.toFixed(0)})\n`;
-      summary += `  Average engagement rate: ${avgEngagementRate}%\n`;
-    }
-
-    summary += '\n';
-  }
-
-  // Enabled attributes section
-  if (enabledAttributes.length > 0) {
-    summary += `\nEnabled Analysis Attributes: ${enabledAttributes.join(', ')}\n`;
-    summary += 'Only analyze the enabled attributes in your response.\n';
-  }
-
-  return summary;
+  return 0;
 }
 
-/**
- * Constructs the LLM prompt with data and enabled attributes
- */
-function buildPrompt(dataSummary: string, enabledAttributes: string[]): string {
-  let prompt = `${dataSummary}
-
-Analyze the content and engagement data to identify audience segments and patterns.
-
-${
-  enabledAttributes.includes('segments')
-    ? `
-Audience Segments:
-- Identify 3-4 distinct audience segments based on engagement patterns
-- For each segment, describe their characteristics, top performing content type, best posting time, and engagement rate
-`
-    : ''
+function toText(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const text = String(value).trim();
+  return text.length > 0 ? text : null;
 }
 
-${
-  enabledAttributes.includes('timing')
-    ? `
-Timing Insights:
-- Identify when audience is most engaged
-- Note any peak engagement times
-`
-    : ''
-}
-
-${
-  enabledAttributes.includes('top_type')
-    ? `
-Top Content Type:
-- Identify which content types resonate most with the audience
-- Provide specific metrics
-`
-    : ''
-}
-
-${
-  enabledAttributes.includes('demographics')
-    ? `
-Demographic Patterns:
-- Identify any demographic patterns in the audience
-- Note any growth or decline trends
-`
-    : ''
-}
-
-Return your analysis as a JSON object with this exact structure:
-{
-  "summary": "Brief overview of audience composition (1-2 sentences with specific numbers)",
-  "segments": [
-    {
-      "name": "Segment name",
-      "description": "What defines this segment",
-      "topContent": "The type of content that performs best",
-      "bestTime": "When this segment is most engaged",
-      "engagementRate": "Specific engagement rate percentage"
-    }
-  ],
-  "topInsight": "The single most important finding about your audience (1-2 sentences with numbers)",
-  "recommendation": "One specific, actionable recommendation for improving audience engagement"
-}`;
-
-  return prompt;
-}
-
-/**
- * Calls the LLM analyzer
- */
-async function callLLM(prompt: string): Promise<AudienceIntelligenceResult> {
+function parseRawData(rawData: string): RawRow {
   try {
-    const result = await mockLLMAnalyze(SYSTEM_PROMPT, prompt);
-
-    // Validate that result has required fields
-    if (
-      !result.summary ||
-      !Array.isArray(result.segments) ||
-      !result.topInsight ||
-      !result.recommendation
-    ) {
-      throw new Error('Invalid LLM response format');
-    }
-
-    return result as AudienceIntelligenceResult;
-  } catch (error) {
-    throw new Error(
-      `LLM API call failed: ${error instanceof Error ? error.message : String(error)}`
-    );
+    return JSON.parse(rawData) as RawRow;
+  } catch {
+    return {};
   }
 }
 
-/**
- * Main analyze function for audience intelligence
- */
+function createAggregate(label: string): Aggregate {
+  return {
+    label,
+    contentCount: 0,
+    impressions: 0,
+    engagement: 0,
+    clicks: 0,
+    conversions: 0,
+    leads: 0,
+    score: 0,
+    contentTypes: new Map(),
+    weakContentTypes: new Map(),
+    demographics: {},
+    sources: new Set(),
+  };
+}
+
+function addCount(map: Map<string, number>, key: string | null, amount: number) {
+  if (!key || amount <= 0) return;
+  map.set(key, (map.get(key) || 0) + amount);
+}
+
+function sortedKeys(map: Map<string, number>, limit = 3): string[] {
+  return [...map.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([key]) => key);
+}
+
+function formatRate(engagement: number, impressions: number): string {
+  if (impressions <= 0) return '0.00%';
+  return `${((engagement / impressions) * 100).toFixed(2)}%`;
+}
+
+function confidence(aggregate: Aggregate): 'HIGH' | 'MEDIUM' | 'LOW' {
+  const demographicSignals = Object.keys(aggregate.demographics).length;
+  if (aggregate.contentCount >= 10 && demographicSignals >= 3) return 'HIGH';
+  if (aggregate.contentCount >= 3 || demographicSignals >= 1) return 'MEDIUM';
+  return 'LOW';
+}
+
+function addObservation(
+  aggregate: Aggregate,
+  item: { channel: string; contentType: string | null; rawData: string; metrics: any }
+) {
+  const raw = parseRawData(item.rawData);
+  const metrics = item.metrics || {};
+  const impressions =
+    toNumber(metrics.impressions) ||
+    toNumber(metrics.reach) ||
+    toNumber(metrics.views) ||
+    toNumber(metrics.sessions);
+  const clicks = toNumber(metrics.clicks);
+  const conversions = toNumber(metrics.conversions);
+  const leads = toNumber(metrics.leadsGenerated);
+  const engagement =
+    toNumber(metrics.likes) +
+    toNumber(metrics.comments) +
+    toNumber(metrics.shares) +
+    toNumber(metrics.upvotes) +
+    clicks +
+    conversions +
+    leads +
+    toNumber(metrics.subscribersGained);
+  const contentType =
+    item.contentType ||
+    toText(raw.post_type) ||
+    toText(raw.format) ||
+    toText(raw.category) ||
+    toText(raw.flair) ||
+    'Unknown';
+
+  aggregate.contentCount += 1;
+  aggregate.impressions += impressions;
+  aggregate.engagement += engagement;
+  aggregate.clicks += clicks;
+  aggregate.conversions += conversions;
+  aggregate.leads += leads;
+  aggregate.score += engagement + clicks * 2 + conversions * 5 + leads * 5;
+  aggregate.sources.add(item.channel);
+
+  addCount(aggregate.contentTypes, contentType, engagement || 1);
+  if (engagement <= 0 && impressions > 0) {
+    addCount(aggregate.weakContentTypes, contentType, 1);
+  }
+
+  for (const field of AUDIENCE_FIELDS) {
+    const value = toText(raw[field]);
+    if (!value) continue;
+    if (!aggregate.demographics[field]) aggregate.demographics[field] = new Map();
+    addCount(aggregate.demographics[field], value, engagement || 1);
+  }
+}
+
+function getObservedDemographics(aggregate: Aggregate): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(aggregate.demographics).map(([field, values]) => [
+      field,
+      sortedKeys(values, 3),
+    ])
+  );
+}
+
+function getSegmentKey(item: { channel: string; contentType: string | null; rawData: string }) {
+  const raw = parseRawData(item.rawData);
+  for (const field of PRIORITY_FIELDS) {
+    const value = toText(raw[field]);
+    if (value) {
+      return { key: `${field}:${value}`, name: value, type: field };
+    }
+  }
+  return {
+    key: `${item.channel}:${item.contentType || 'Unknown'}`,
+    name: `${item.channel} ${item.contentType || 'Audience'}`,
+    type: 'behavioral',
+  };
+}
+
+function buildMissingFields(foundFields: string[]) {
+  return AUDIENCE_FIELDS.filter((field) => !foundFields.includes(field)).slice(0, 8);
+}
+
+function parseJsonArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function personaKeywords(persona: {
+  name: string;
+  description: string | null;
+  responsibilities: string | null;
+  desiredContent: string | null;
+}) {
+  const sourceTerms = [
+    persona.name,
+    persona.description || '',
+    ...parseJsonArray(persona.responsibilities),
+    ...parseJsonArray(persona.desiredContent),
+  ];
+
+  return Array.from(
+    new Set(
+      sourceTerms
+        .join(' ')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .map((word) => word.trim())
+        .filter((word) => word.length >= 4)
+    )
+  );
+}
+
+function itemSearchText(item: { title: string | null; contentType: string | null; rawData: string }) {
+  return `${item.title || ''} ${item.contentType || ''} ${item.rawData || ''}`.toLowerCase();
+}
+
 export async function analyze(
   tenantId: string,
   enabledAttributes: string[] = []
 ): Promise<AgentResult> {
   try {
-    // Verify tenant exists
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) return { success: false, error: `Tenant not found: ${tenantId}` };
+
+    const contentItems = await prisma.contentItem.findMany({
+      where: { tenantId },
+      include: { metrics: true },
+      orderBy: { createdAt: 'desc' },
+      take: 250,
     });
 
-    if (!tenant) {
+    if (contentItems.length === 0) {
       return {
-        success: false,
-        error: `Tenant not found: ${tenantId}`,
+        success: true,
+        data: {
+          summary: 'No uploaded content data is available yet for audience intelligence.',
+          personaEngagement: [],
+          observedSegments: [],
+          demographicInsights: [],
+          dataQuality: {
+            rowsAnalyzed: 0,
+            channelsWithData: 0,
+            optionalAudienceFieldsFound: [],
+            missingUsefulFields: AUDIENCE_FIELDS.slice(0, 8),
+            note: 'Upload channel performance data first. Optional audience columns can be left blank when unavailable.',
+          },
+          topInsight: 'No current engagement data is available yet.',
+          recommendation: 'Upload at least one channel CSV to identify audience priorities.',
+          segments: [],
+        },
       };
     }
 
-    // Build data summary
-    const dataSummary = await buildDataSummary(tenantId, enabledAttributes);
+    const personas = await prisma.audiencePersona.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'asc' },
+    });
+    const channelMap = new Map<string, Aggregate>();
+    const segmentMap = new Map<string, Aggregate>();
+    const personaMap = new Map<string, Aggregate>();
+    const demographicMap: Record<string, Map<string, number>> = {};
+    const foundAudienceFields = new Set<string>();
 
-    // Construct LLM prompt
-    const prompt = buildPrompt(dataSummary, enabledAttributes);
+    for (const persona of personas) {
+      personaMap.set(persona.personaId, createAggregate(persona.name));
+    }
 
-    // Call LLM
-    const result = await callLLM(prompt);
+    for (const item of contentItems) {
+      const channelAggregate = channelMap.get(item.channel) || createAggregate(item.channel);
+      addObservation(channelAggregate, item);
+      channelMap.set(item.channel, channelAggregate);
+
+      const searchText = itemSearchText(item);
+      for (const persona of personas) {
+        const keywords = personaKeywords(persona);
+        const matched = keywords.length === 0 || keywords.some((keyword) => searchText.includes(keyword));
+        if (!matched) continue;
+        const personaAggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
+        addObservation(personaAggregate, item);
+        personaMap.set(persona.personaId, personaAggregate);
+      }
+
+      const segment = getSegmentKey(item);
+      const segmentAggregate = segmentMap.get(segment.key) || createAggregate(segment.name);
+      addObservation(segmentAggregate, item);
+      segmentMap.set(segment.key, segmentAggregate);
+
+      const raw = parseRawData(item.rawData);
+      for (const field of AUDIENCE_FIELDS) {
+        const value = toText(raw[field]);
+        if (!value) continue;
+        foundAudienceFields.add(field);
+        if (!demographicMap[field]) demographicMap[field] = new Map();
+        addCount(demographicMap[field], value, 1);
+      }
+    }
+
+    const observedSegments = [...segmentMap.entries()]
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, 5)
+      .map(([key, segment]) => {
+        const segmentType = key.split(':')[0] || 'behavioral';
+        const acquisitionSignals = [
+          segment.conversions > 0 ? `${segment.conversions.toFixed(0)} conversions` : null,
+          segment.leads > 0 ? `${segment.leads.toFixed(0)} leads` : null,
+          segment.clicks > 0 ? `${segment.clicks.toFixed(0)} clicks` : null,
+        ].filter(Boolean) as string[];
+
+        return {
+          segmentName: segment.label,
+          segmentType,
+          whyThisSegmentExists: `${segment.contentCount} rows show engagement from this ${segmentType.replace(/_/g, ' ')} segment.`,
+          observedDemographics: getObservedDemographics(segment),
+          topChannels: [...segment.sources].slice(0, 3),
+          contentTypesEngagingWith: sortedKeys(segment.contentTypes, 3),
+          currentEngagement: Number(segment.engagement.toFixed(0)),
+          currentEngagementRate: formatRate(segment.engagement, segment.impressions),
+          acquisitionSignals:
+            acquisitionSignals.length > 0 ? acquisitionSignals : ['No conversion or lead signal uploaded for this segment'],
+          confidence: confidence(segment),
+        };
+      });
+
+    const personaEngagement = personas
+      .map((persona) => {
+        const aggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
+        const topContentTypes = sortedKeys(aggregate.contentTypes, 3);
+        const weakContentTypes = sortedKeys(aggregate.weakContentTypes, 3);
+        const topChannels = [...aggregate.sources].slice(0, 3);
+
+        return {
+          personaId: persona.personaId,
+          name: persona.name,
+          contentCount: aggregate.contentCount,
+          currentEngagement: Number(aggregate.engagement.toFixed(0)),
+          currentEngagementRate: formatRate(aggregate.engagement, aggregate.impressions),
+          topContentTypes,
+          weakContentTypes,
+          topChannels,
+          observedSignals: getObservedDemographics(aggregate),
+          recommendation:
+            aggregate.contentCount > 0
+              ? `This persona is engaging most with ${topContentTypes[0] || 'available content'}${topChannels[0] ? ` on ${topChannels[0]}` : ''}. Create more content in that pattern and validate with the next upload.`
+              : `No uploaded content clearly maps to this persona yet. Add persona/audience fields or create content targeting ${persona.name}.`,
+        };
+      })
+      .sort((a, b) => b.currentEngagement - a.currentEngagement)
+      .slice(0, 5);
+
+    const demographicInsights = Object.entries(demographicMap).map(([field, values]) => ({
+      field,
+      topValues: sortedKeys(values, 5),
+      source: 'observed' as const,
+    }));
+
+    const strongestPersona = personaEngagement[0];
+    const strongestSegment = observedSegments[0];
+
+    // Base insights from statistical analysis
+    const baseTopInsight = strongestPersona
+      ? `${strongestPersona.name} has the strongest matched engagement with ${strongestPersona.currentEngagement} current engagement actions.`
+      : strongestSegment
+      ? `${strongestSegment.segmentName} is the strongest observed audience segment.`
+      : 'No audience segment has enough current engagement data to rank yet.';
+    const baseRecommendation = strongestPersona
+      ? `Prioritize ${strongestPersona.topContentTypes[0] || 'proven'} content for ${strongestPersona.name}, especially on ${strongestPersona.topChannels[0] || 'the strongest observed channel'}.`
+      : 'Upload optional audience fields such as job title, seniority, age group, country, and lifecycle stage to improve audience intelligence.';
+    const baseSegments = observedSegments.map((segment) => ({
+      name: segment.segmentName,
+      description: segment.whyThisSegmentExists,
+      topContent: segment.contentTypesEngagingWith.join(', ') || 'Not available',
+      bestTime: 'Not available in uploaded data',
+      engagementRate: segment.currentEngagementRate,
+    }));
+
+    // Use LLM to enhance segment descriptions, top insight, and recommendation
+    let enhancedSegments = baseSegments;
+    let enhancedTopInsight = baseTopInsight;
+    let enhancedRecommendation = baseRecommendation;
+
+    try {
+      const llmPrompt = JSON.stringify({
+        totalRows: contentItems.length,
+        totalPersonas: personas.length,
+        strongestPersona: strongestPersona ? { name: strongestPersona.name, engagement: strongestPersona.currentEngagement, topContentTypes: strongestPersona.topContentTypes, topChannels: strongestPersona.topChannels } : null,
+        strongestSegment: strongestSegment ? { name: strongestSegment.segmentName, engagement: strongestSegment.currentEngagement, engagementRate: strongestSegment.currentEngagementRate } : null,
+        baseSegments: baseSegments.map(s => ({ name: s.name, topContent: s.topContent, engagementRate: s.engagementRate }))
+      });
+      const systemPrompt = 'You are an audience intelligence analyst. Analyze the provided audience statistics and return JSON with enhanced insights. Return ONLY valid JSON with this structure: { "segmentDescriptions": [{"name": string, "description": string}], "topInsight": string, "recommendation": string }';
+      const llmResult = await mockLLMAnalyze(systemPrompt, llmPrompt);
+      
+      if (llmResult.segmentDescriptions && Array.isArray(llmResult.segmentDescriptions)) {
+        enhancedSegments = baseSegments.map(seg => {
+          const enhanced = llmResult.segmentDescriptions.find((d: any) => d.name === seg.name);
+          return enhanced ? { ...seg, description: enhanced.description } : seg;
+        });
+      }
+      
+      if (llmResult.topInsight) {
+        enhancedTopInsight = llmResult.topInsight;
+      }
+      
+      if (llmResult.recommendation) {
+        enhancedRecommendation = llmResult.recommendation;
+      }
+    } catch (error) {
+      console.warn('[audience-intelligence] LLM enhancement failed, using statistical fallback:', error);
+    }
 
     return {
       success: true,
-      data: result,
+      data: {
+        summary: `Analyzed ${contentItems.length} uploaded rows and ${personas.length} configured personas. Audience Intelligence focuses on who is engaging and which content types they respond to.`,
+        personaEngagement,
+        observedSegments,
+        demographicInsights,
+        dataQuality: {
+          rowsAnalyzed: contentItems.length,
+          channelsWithData: channelMap.size,
+          optionalAudienceFieldsFound: [...foundAudienceFields],
+          missingUsefulFields: buildMissingFields([...foundAudienceFields]),
+          note:
+            enabledAttributes.length > 0
+              ? `Enabled attributes: ${enabledAttributes.join(', ')}. Missing optional CSV columns are treated as unavailable, not inferred.`
+              : 'Missing optional CSV columns are treated as unavailable, not inferred.',
+        },
+        topInsight: enhancedTopInsight,
+        recommendation: enhancedRecommendation,
+        segments: enhancedSegments,
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[audience-intelligence] Error: ${errorMessage}`);
-    return {
-      success: false,
-      error: errorMessage,
-    };
+    return { success: false, error: errorMessage };
   }
 }

@@ -32,6 +32,9 @@ yarn-error.log*
 # Database
 prisma/data.db
 prisma/data.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+*.db
 
 # IDE
 .vscode/

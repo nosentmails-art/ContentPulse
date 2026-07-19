@@ -248,6 +248,48 @@ function getMockResult(
       topInsight: 'Technical deep-dives drive 3x higher engagement than general content — your core audience rewards specificity.',
       recommendation: 'Publish 2 technical deep-dives per week, targeting the 10 AM Tuesday slot for maximum reach.',
     };
+  } else if (prompt.includes('"gapReasons"') || prompt.includes('"opportunityEnhancements"')) {
+    // Gap & Opportunity Analysis (hybrid)
+    mockResult = {
+      gapReasons: [
+        { topic: 'AI', reason: 'AI has no visible coverage in the uploaded content titles, but shows high demand from engagement patterns.' },
+        { topic: 'Cloud', reason: 'Cloud appears in only 2% of uploaded content rows, representing a significant coverage gap.' },
+      ],
+      opportunityEnhancements: [
+        { topic: 'AI', suggestedTitle: 'AI-Powered Content Strategy: A Practical Implementation Guide', urgency: 'HOT', reason: 'Zero coverage with high audience interest based on engagement signals.' },
+        { topic: 'Cloud', suggestedTitle: 'Cloud Architecture Patterns for Modern Applications', urgency: 'WARM', reason: 'Low coverage with moderate engagement potential.' },
+      ],
+      nextBestAction: 'Create an AI-focused long-form article on your strongest channel (LinkedIn) to test this high-priority gap.',
+    };
+  } else if (prompt.includes('"segmentDescriptions"') && !prompt.includes('"segments"')) {
+    // Audience Intelligence (hybrid - segment descriptions only)
+    mockResult = {
+      segmentDescriptions: [
+        { name: 'Early Adopters (Tech)', description: 'Technical decision-makers actively evaluating new tools and frameworks for production use.' },
+        { name: 'Growth Leaders', description: 'Marketing leaders focused on scalable growth strategies and measurable ROI.' },
+      ],
+      topInsight: 'Your technical audience segment shows 3x higher engagement than general business content.',
+      recommendation: 'Double down on technical deep-dives and implementation guides for the Early Adopters segment.',
+    };
+  } else if (prompt.includes('"verdicts"') || prompt.includes('"topCombo"')) {
+    // Channel Intelligence (hybrid)
+    mockResult = {
+      topCombo: {
+        format: 'Long-form article',
+        channel: 'LINKEDIN',
+        reason: 'Highest engagement rate (12%) and best reach per post — this is your winning combination.',
+      },
+      avoidCombo: {
+        format: 'Short post',
+        channel: 'TWITTER',
+        reason: 'Minimal traction with your audience — zero measurable ROI from this format/channel pair.',
+      },
+      verdicts: [
+        { format: 'Long-form article', channel: 'LINKEDIN', verdict: 'Best combo — double down here' },
+        { format: 'Tutorial', channel: 'BLOG', verdict: 'Good — strong SEO value' },
+        { format: 'Short post', channel: 'TWITTER', verdict: 'Avoid — very low return' },
+      ],
+    };
   } else {
     mockResult = {
       summary: 'Analysis complete — review individual metrics below.',

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Search } from "lucide-react";
@@ -31,72 +31,6 @@ interface Agent {
   lastRun: string | null;
 }
 
-const AGENTS: Agent[] = [
-  {
-    id: "1",
-    agentType: "CONTENT_ANALYTICS",
-    name: "Content Analytics",
-    description: "Ingests and normalizes all channel data",
-    enabled: true,
-    status: "COMPLETED",
-    lastRun: "2 hours ago",
-  },
-  {
-    id: "2",
-    agentType: "AUDIENCE_INTELLIGENCE",
-    name: "Audience Intelligence",
-    description: "Analyzes audience demographics and behavior",
-    enabled: true,
-    status: "IDLE",
-    lastRun: "4 hours ago",
-  },
-  {
-    id: "3",
-    agentType: "CHANNEL_CONTENT_INTELLIGENCE",
-    name: "Channel Intelligence",
-    description: "Compares performance across channels",
-    enabled: true,
-    status: "RUNNING",
-    lastRun: null,
-  },
-  {
-    id: "4",
-    agentType: "SENTIMENT_ANALYSIS",
-    name: "Sentiment Analysis",
-    description: "Analyzes emotional tone and sentiment",
-    enabled: true,
-    status: "COMPLETED",
-    lastRun: "1 hour ago",
-  },
-  {
-    id: "5",
-    agentType: "GAP_ANALYSIS",
-    name: "Gap Analysis",
-    description: "Identifies missing content topics and opportunities",
-    enabled: false,
-    status: "IDLE",
-    lastRun: null,
-  },
-  {
-    id: "6",
-    agentType: "COMPETITOR_ANALYSIS",
-    name: "Competitor Analysis",
-    description: "Benchmarks against competitors",
-    enabled: true,
-    status: "COMPLETED",
-    lastRun: "30 minutes ago",
-  },
-  {
-    id: "7",
-    agentType: "OPPORTUNITY_IDENTIFICATION",
-    name: "Opportunity Finder",
-    description: "Identifies content and engagement opportunities",
-    enabled: true,
-    status: "IDLE",
-    lastRun: "3 hours ago",
-  },
-];
-
 const AGENT_ICONS: Record<string, React.ReactNode> = {
   CONTENT_ANALYTICS: <BarChart3 className="w-5 h-5" />,
   AUDIENCE_INTELLIGENCE: <Users className="w-5 h-5" />,
@@ -119,8 +53,38 @@ export default function AgentsIndexPage() {
   const tenantSlug = params.tenant as string;
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEnabled, setFilterEnabled] = useState<"all" | "enabled" | "disabled">("all");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredAgents = AGENTS.filter((agent) => {
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch(`/api/${tenantSlug}/agents`);
+        if (res.ok) {
+          const data = await res.json();
+          const mappedAgents = data.agents.map((agent: any) => ({
+            id: agent.id,
+            agentType: agent.type,
+            name: agent.name,
+            description: agent.description,
+            enabled: agent.enabled,
+            status: agent.latestRun?.status || "IDLE",
+            lastRun: agent.latestRun?.startedAt 
+              ? `${Math.floor((Date.now() - new Date(agent.latestRun.startedAt).getTime()) / (1000 * 60))} minutes ago`
+              : null,
+          }));
+          setAgents(mappedAgents);
+        }
+      } catch (error) {
+        console.error("Failed to fetch agents:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgents();
+  }, [tenantSlug]);
+
+  const filteredAgents = agents.filter((agent: Agent) => {
     const matchesSearch =
       agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agent.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -171,7 +135,7 @@ export default function AgentsIndexPage() {
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              All ({AGENTS.length})
+              All ({agents.length})
             </button>
             <button
               onClick={() => setFilterEnabled("enabled")}
@@ -181,7 +145,7 @@ export default function AgentsIndexPage() {
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              Enabled ({AGENTS.filter((a) => a.enabled).length})
+              Enabled ({agents.filter((a: Agent) => a.enabled).length})
             </button>
             <button
               onClick={() => setFilterEnabled("disabled")}
@@ -191,13 +155,17 @@ export default function AgentsIndexPage() {
                   : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              Disabled ({AGENTS.filter((a) => !a.enabled).length})
+              Disabled ({agents.filter((a: Agent) => !a.enabled).length})
             </button>
           </div>
         </div>
 
         {/* Agents Grid */}
-        {filteredAgents.length > 0 ? (
+        {loading ? (
+          <div className="card text-center py-12">
+            <p className="text-slate-400">Loading agents...</p>
+          </div>
+        ) : filteredAgents.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredAgents.map((agent) => (
               <Link

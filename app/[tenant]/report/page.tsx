@@ -14,6 +14,7 @@ import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { ReportSection } from "@/components/ReportSection";
 import { SentimentScoreCard } from "@/components/SentimentScoreCard";
 import { OpportunityCard } from "@/components/OpportunityCard";
+import SentimentDashboard from "@/components/SentimentDashboard";
 import { toast } from "sonner";
 
 const MOCK_REPORT_DATA = {
@@ -233,29 +234,22 @@ export default function ReportPage() {
 
         {/* Sections */}
         <div className="space-y-8">
-          {/* Opportunities */}
-          {reportData?.OPPORTUNITY_IDENTIFICATION?.status === "COMPLETED" ? (
+          {/* Opportunities (from merged Gap & Opportunity agent) */}
+          {reportData?.GAP_ANALYSIS?.status === "COMPLETED" &&
+            reportData?.GAP_ANALYSIS?.data?.opportunities?.length > 0 && (
             <div className="card">
               <div className="flex items-start justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white">Recommended Content Opportunities</h2>
                 <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">AI-generated analysis</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {reportData?.OPPORTUNITY_IDENTIFICATION?.data?.opportunities?.map(
+                {reportData?.GAP_ANALYSIS?.data?.opportunities?.map(
                   (opp: any, i: number) => (
                     <OpportunityCard key={i} {...opp} />
                   )
                 )}
               </div>
             </div>
-          ) : (
-            <ReportSection
-              agentType="OPPORTUNITY_IDENTIFICATION"
-              title="Recommended Content Opportunities"
-              data={reportData?.OPPORTUNITY_IDENTIFICATION?.data}
-              status={reportData?.OPPORTUNITY_IDENTIFICATION?.status || "PENDING"}
-              source="AI-generated analysis"
-            />
           )}
 
           {/* Sentiment Analysis */}
@@ -266,11 +260,14 @@ export default function ReportPage() {
                 <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">AI-generated analysis</span>
               </div>
               <SentimentScoreCard
-                score={reportData?.SENTIMENT_ANALYSIS?.data?.overallScore}
-                label={reportData?.SENTIMENT_ANALYSIS?.data?.overallLabel}
-                positiveThemes={reportData?.SENTIMENT_ANALYSIS?.data?.positiveThemes || []}
-                negativeThemes={reportData?.SENTIMENT_ANALYSIS?.data?.negativeThemes || []}
+                score={reportData?.SENTIMENT_ANALYSIS?.data?.brandOverallSentiment?.overallSentimentScore ?? reportData?.SENTIMENT_ANALYSIS?.data?.overallScore}
+                label={reportData?.SENTIMENT_ANALYSIS?.data?.brandOverallSentiment?.overallSentimentLabel ?? reportData?.SENTIMENT_ANALYSIS?.data?.overallLabel}
+                positiveThemes={reportData?.SENTIMENT_ANALYSIS?.data?.brandOverallSentiment?.crossChannelThemes?.commonPositiveThemes || reportData?.SENTIMENT_ANALYSIS?.data?.positiveThemes || []}
+                negativeThemes={reportData?.SENTIMENT_ANALYSIS?.data?.brandOverallSentiment?.crossChannelThemes?.commonNegativeThemes || reportData?.SENTIMENT_ANALYSIS?.data?.negativeThemes || []}
               />
+              <div className="mt-6">
+                <SentimentDashboard data={reportData?.SENTIMENT_ANALYSIS?.data} />
+              </div>
             </div>
           ) : (
             <ReportSection
@@ -300,14 +297,8 @@ export default function ReportPage() {
             source="AI-generated analysis"
           />
 
-          {/* Gap Analysis */}
-          <ReportSection
-            agentType="GAP_ANALYSIS"
-            title="Content Gaps & Opportunities"
-            data={reportData?.GAP_ANALYSIS?.data}
-            status={reportData?.GAP_ANALYSIS?.status || "PENDING"}
-            source="Rule-based from seeded data"
-          />
+          {/* Gap & Opportunity Analysis */}
+          {/* Note: Opportunities are displayed above in the hero section; this shows detailed gap analysis */}
 
           {/* Competitor Analysis */}
           <ReportSection

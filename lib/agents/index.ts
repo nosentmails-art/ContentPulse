@@ -10,7 +10,13 @@ export { analyze as analyzeChannelIntelligence } from './channel-intelligence';
 export type { ChannelIntelligenceResult } from './channel-intelligence';
 
 export { analyze as analyzeSentiment } from './sentiment-analysis';
-export type { SentimentAnalysisResult } from './sentiment-analysis';
+export type {
+  SentimentAnalysisResult,
+  ChannelSentimentData,
+  ChannelEngagementMetrics,
+  BrandOverallSentiment,
+  SentimentTrend,
+} from './sentiment-analysis';
 
 export { analyze as analyzeCompetitors } from './competitor-analysis';
 export type { CompetitorAnalysisResult } from './competitor-analysis';

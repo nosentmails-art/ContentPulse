@@ -39,11 +39,18 @@ export async function GET(
     });
 
     // Map to response format with latestRun
-    const agentsWithLatestRun = agents.map((agent) => ({
-      ...agent,
-      latestRun: agent.runs[0] || null,
-      runs: undefined,
-    }));
+    const agentsWithLatestRun = agents
+      .filter((agent) => agent.type !== 'OPPORTUNITY_IDENTIFICATION')
+      .map((agent) => ({
+        ...agent,
+        name: agent.type === 'GAP_ANALYSIS' ? 'Gap & Opportunity Analysis' : agent.name,
+        description:
+          agent.type === 'GAP_ANALYSIS'
+            ? 'Finds content strategy gaps and turns them into recommended opportunities'
+            : agent.description,
+        latestRun: agent.runs[0] || null,
+        runs: undefined,
+      }));
 
     return NextResponse.json({
       agents: agentsWithLatestRun,

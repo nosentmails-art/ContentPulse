@@ -116,8 +116,8 @@ async function main() {
   await createAgentWithAttributes(
     devInsights.id,
     'GAP_ANALYSIS',
-    'Gap Analysis',
-    'Identifies content gaps and opportunities',
+    'Gap & Opportunity Analysis',
+    'Finds content strategy gaps and turns them into recommended opportunities',
     [
       { key: 'topics', label: 'Topic gap identification', enabled: true },
       { key: 'formats', label: 'Format gap analysis', enabled: true },
@@ -211,8 +211,8 @@ async function main() {
   await createAgentWithAttributes(
     growthStack.id,
     'GAP_ANALYSIS',
-    'Gap Analysis',
-    'Identifies content gaps and opportunities',
+    'Gap & Opportunity Analysis',
+    'Finds content strategy gaps and turns them into recommended opportunities',
     [
       { key: 'topics', label: 'Topic gap identification', enabled: true },
       { key: 'formats', label: 'Format gap analysis', enabled: true },

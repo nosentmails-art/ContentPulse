@@ -234,6 +234,15 @@ export default function ReportPage() {
 
         {/* Sections */}
         <div className="space-y-8">
+          {/* Content Analytics - moved to top to show content metadata analyzed */}
+          <ReportSection
+            agentType="CONTENT_ANALYTICS"
+            title="Content Performance Overview"
+            data={reportData?.CONTENT_ANALYTICS?.data}
+            status={reportData?.CONTENT_ANALYTICS?.status || "PENDING"}
+            source="Rule-based from seeded data"
+          />
+
           {/* Opportunities (from merged Gap & Opportunity agent) */}
           {reportData?.GAP_ANALYSIS?.status === "COMPLETED" &&
             reportData?.GAP_ANALYSIS?.data?.opportunities?.length > 0 && (
@@ -313,15 +322,6 @@ export default function ReportPage() {
             data={reportData?.COMPETITOR_ANALYSIS?.data}
             status={reportData?.COMPETITOR_ANALYSIS?.status || "PENDING"}
             source="AI-generated analysis"
-          />
-
-          {/* Content Analytics */}
-          <ReportSection
-            agentType="CONTENT_ANALYTICS"
-            title="Content Performance Overview"
-            data={reportData?.CONTENT_ANALYTICS?.data}
-            status={reportData?.CONTENT_ANALYTICS?.status || "PENDING"}
-            source="Rule-based from seeded data"
           />
         </div>
 

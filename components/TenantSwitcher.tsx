@@ -45,6 +45,7 @@ export function TenantSwitcher({ tenants, currentSlug }: TenantSwitcherProps) {
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
+      <label className="text-xs text-slate-500 mb-1 block">Brand / Project</label>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition"

@@ -118,7 +118,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm">
-        <p>&copy; 2024 ContentPulse. Content intelligence for editorial teams.</p>
+        <p>&copy; 2026 ContentPulse. Content intelligence for editorial teams.</p>
       </footer>
     </div>
   );

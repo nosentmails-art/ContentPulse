@@ -40,15 +40,15 @@ interface GapAnalysisCardProps {
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  HIGH: 'bg-red-500/20 text-red-300',
-  MEDIUM: 'bg-yellow-500/20 text-yellow-300',
+  HIGH: 'bg-gradient-to-r from-red-600 to-orange-500 text-white',
+  MEDIUM: 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white',
   LOW: 'bg-slate-500/20 text-slate-300',
 };
 
 const URGENCY_COLORS: Record<string, string> = {
-  HOT: 'bg-red-500/20 text-red-300',
-  WARM: 'bg-orange-500/20 text-orange-300',
-  EVERGREEN: 'bg-green-500/20 text-green-300',
+  HOT: 'bg-gradient-to-r from-red-600 to-orange-500 text-white',
+  WARM: 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white',
+  EVERGREEN: 'bg-gradient-to-r from-green-600 to-emerald-500 text-white',
 };
 
 export default function GapAnalysisCard({ data }: GapAnalysisCardProps) {

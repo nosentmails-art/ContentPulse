@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Play, Loader2, X } from "lucide-react";
+import { Play, Loader2, X, FileText, Upload } from "lucide-react";
 import { AgentCard } from "@/components/AgentCard";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { toast } from "sonner";
@@ -181,9 +181,13 @@ export default function TenantPage() {
       {/* Top Bar */}
       <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container-page flex items-center justify-between">
-          <Link href={`/${tenantSlug}`} className="text-2xl font-bold text-white hover:text-indigo-400 transition">
-            ContentPulse
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-slate-400 hover:text-white transition text-sm">
+              Home
+            </Link>
+            <span className="text-slate-600">/</span>
+            <span className="text-white font-medium">{tenantSlug}</span>
+          </div>
           <nav className="hidden sm:flex items-center gap-6 text-sm">
             <Link href={`/${tenantSlug}`} className="text-slate-300 hover:text-indigo-400 transition">Dashboard</Link>
             <Link href={`/${tenantSlug}/report`} className="text-slate-300 hover:text-indigo-400 transition">Content Plan</Link>
@@ -197,7 +201,14 @@ export default function TenantPage() {
       <div className="container-page py-12">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-4xl font-bold text-white mb-2">Content Intelligence Hub</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-4xl font-bold text-white">Content Intelligence Hub</h2>
+            {agents.length > 0 && agents[0].latestRun?.completedAt && (
+              <div className="text-sm text-slate-400">
+                Last updated: {new Date(agents[0].latestRun.completedAt).toLocaleString()}
+              </div>
+            )}
+          </div>
           <p className="text-slate-400">
             Select what to analyze, then run it in one click.
           </p>
@@ -229,54 +240,94 @@ export default function TenantPage() {
               View Content Plan
             </Link>
           ) : (
-            <button
-              onClick={handleRunAllEnabled}
-              disabled={loading || agents.length === 0}
-              className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {runningAgent ? `Analyzing ${runningAgent}... (${completedCount}/${enabledAgentCount})` : "Starting analysis..."}
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4" />
-                  Generate Content Plan
-                </>
+            <div className="space-y-4">
+              <button
+                onClick={handleRunAllEnabled}
+                disabled={loading || agents.length === 0}
+                className="btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {runningAgent ? `Analyzing ${runningAgent}... (${completedCount}/${enabledAgentCount})` : "Starting analysis..."}
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    Generate Content Plan
+                  </>
+                )}
+              </button>
+              {loading && (
+                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-600 to-violet-600 h-full transition-all duration-300 ease-out"
+                    style={{ width: `${(completedCount / enabledAgentCount) * 100}%` }}
+                  />
+                </div>
               )}
-            </button>
+            </div>
           )}
         </div>
 
         {/* Agent Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {agents.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agentType={agent.type}
-              name={agent.name}
-              description={agent.description}
-              enabled={agent.enabled}
-              status={agent.latestRun?.status ?? "IDLE"}
-              attributes={agent.attributes.map((attr: any) => ({
-                key: attr.key,
-                label: attr.label,
-                enabled: attr.enabled,
-              }))}
-              lastRun={agent.latestRun?.completedAt ? new Date(agent.latestRun.completedAt).toLocaleString() : null}
-              resultPreview={extractSummary(agent.latestRun?.resultJson)}
-              detailHref={`/${tenantSlug}/agents/${agent.type.toLowerCase()}`}
-              onToggle={() => handleAgentToggle(agent.type)}
-              onAttributeToggle={(key) => handleAttributeToggle(agent.type, key)}
-              onRun={() => handleRunAgent(agent.type)}
-              isRunningAll={loading}
-            />
-          ))}
+          {loading ? (
+            // Skeleton loaders
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card p-6 space-y-4">
+                <div className="h-6 bg-slate-700 rounded animate-pulse" />
+                <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-slate-700 rounded animate-pulse w-1/2" />
+                <div className="h-8 bg-slate-700 rounded animate-pulse mt-4" />
+              </div>
+            ))
+          ) : agents.length === 0 ? (
+            // Empty state
+            <div className="col-span-full card p-12 text-center">
+              <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">No Data Yet</h3>
+              <p className="text-slate-400 mb-6">
+                Upload your content data to get started with AI-powered insights.
+              </p>
+              <Link
+                href={`/${tenantSlug}/connect`}
+                className="btn-primary inline-flex items-center justify-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Data
+              </Link>
+            </div>
+          ) : (
+            agents.map((agent) => (
+              <AgentCard
+                key={agent.id}
+                agentType={agent.type}
+                name={agent.name}
+                description={agent.description}
+                enabled={agent.enabled}
+                status={agent.latestRun?.status ?? "IDLE"}
+                attributes={agent.attributes.map((attr: any) => ({
+                  key: attr.key,
+                  label: attr.label,
+                  enabled: attr.enabled,
+                }))}
+                lastRun={agent.latestRun?.completedAt ? new Date(agent.latestRun.completedAt).toLocaleString() : null}
+                resultPreview={extractSummary(agent.latestRun?.resultJson)}
+                detailHref={`/${tenantSlug}/agents/${agent.type.toLowerCase()}`}
+                onToggle={() => handleAgentToggle(agent.type)}
+                onAttributeToggle={(key) => handleAttributeToggle(agent.type, key)}
+                onRun={() => handleRunAgent(agent.type)}
+                isRunningAll={loading}
+              />
+            ))
+          )}
         </div>
 
         {/* Bottom Links */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm mb-8">
           <Link href={`/${tenantSlug}/connect`} className="text-indigo-400 hover:text-indigo-300">
             → Import Your Content Data
           </Link>
@@ -285,6 +336,11 @@ export default function TenantPage() {
             → View Content Plan
           </Link>
         </div>
+
+        {/* Footer */}
+        <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm">
+          <p>&copy; 2026 ContentPulse. Content intelligence for editorial teams.</p>
+        </footer>
       </div>
     </div>
   );

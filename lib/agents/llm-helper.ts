@@ -119,7 +119,7 @@ export async function mockLLMAnalyze(
     }
   }
 
-  console.warn('[llm-helper] No API keys configured; returning mock data.');
+  console.warn('[llm-helper] No API keys configured; using offline mode with mock data.');
   return getMockResult(prompt);
 }
 

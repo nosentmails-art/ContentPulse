@@ -29,12 +29,12 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# Database
-prisma/data.db
-prisma/data.db-journal
-prisma/dev.db
-prisma/dev.db-journal
-*.db
+# Database (commented out for hackathon evaluators - dev.db contains demo data)
+# prisma/data.db
+# prisma/data.db-journal
+# prisma/dev.db
+# prisma/dev.db-journal
+# *.db
 
 # IDE
 .vscode/

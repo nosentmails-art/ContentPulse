@@ -17,6 +17,7 @@ model Tenant {
   agents       Agent[]
   competitors  Competitor[]
   contentItems ContentItem[]
+  personas     Persona[]
 }
 
 model Agent {
@@ -113,4 +114,16 @@ model Competitor {
   isAuto   Boolean @default(false)
   rawData  String?
   tenant   Tenant  @relation(fields: [tenantId], references: [id])
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  tenantId    String
+  personaId   String   @unique
+  name        String
+  description String?
+  keywords    String   // JSON array of keywords for matching
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
 }

@@ -243,24 +243,6 @@ export default function ReportPage() {
             source="Rule-based from seeded data"
           />
 
-          {/* Opportunities (from merged Gap & Opportunity agent) */}
-          {reportData?.GAP_ANALYSIS?.status === "COMPLETED" &&
-            reportData?.GAP_ANALYSIS?.data?.opportunities?.length > 0 && (
-            <div className="card">
-              <div className="flex items-start justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Recommended Content Opportunities</h2>
-                <span className="text-xs font-medium px-2 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">AI-generated analysis</span>
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {reportData?.GAP_ANALYSIS?.data?.opportunities?.map(
-                  (opp: any, i: number) => (
-                    <OpportunityCard key={i} {...opp} />
-                  )
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Sentiment Analysis */}
           {reportData?.SENTIMENT_ANALYSIS?.status === "COMPLETED" ? (
             <div className="card">

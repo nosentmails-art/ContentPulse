@@ -718,7 +718,63 @@ async function main() {
     }
   }
 
+  await seedPersonas(createdTenants);
+
   console.log('✅ Database seeded successfully!');
+}
+
+async function seedPersonas(tenants: any[]) {
+  console.log('Seeding personas for all tenants...');
+
+  const personaData = [
+    {
+      personaId: 'tech_enthusiast',
+      name: 'Tech Enthusiast',
+      description: 'Developers and engineers interested in new technologies, frameworks, and best practices',
+      keywords: JSON.stringify(['react', 'javascript', 'typescript', 'python', 'api', 'backend', 'frontend', 'devops', 'cloud', 'docker', 'kubernetes', 'ai', 'machine learning', 'database', 'architecture', 'performance', 'security']),
+    },
+    {
+      personaId: 'decision_maker',
+      name: 'Decision Maker',
+      description: 'CTOs, VPs of Engineering, and technical leaders evaluating tools and strategies',
+      keywords: JSON.stringify(['strategy', 'leadership', 'management', 'team', 'hiring', 'budget', 'roi', 'scale', 'enterprise', 'compliance', 'security', 'cost', 'vendor', 'evaluation', 'decision']),
+    },
+    {
+      personaId: 'student_learner',
+      name: 'Student/Learner',
+      description: 'Students and beginners learning programming and software development',
+      keywords: JSON.stringify(['tutorial', 'beginner', 'learn', 'how to', 'guide', 'getting started', 'introduction', 'basics', 'fundamentals', 'course', 'education', 'study', 'practice', 'example', 'step by step']),
+    },
+    {
+      personaId: 'founder_entrepreneur',
+      name: 'Founder/Entrepreneur',
+      description: 'Startup founders and entrepreneurs building products and businesses',
+      keywords: JSON.stringify(['startup', 'founder', 'entrepreneur', 'business', 'growth', 'marketing', 'sales', 'funding', 'investment', 'pitch', 'product', 'launch', 'customer', 'revenue', 'scale', 'mvp']),
+    },
+    {
+      personaId: 'content_creator',
+      name: 'Content Creator',
+      description: 'Marketers and content creators focused on audience engagement and growth',
+      keywords: JSON.stringify(['content', 'marketing', 'social media', 'engagement', 'audience', 'growth', 'brand', 'campaign', 'strategy', 'analytics', 'reach', 'traffic', 'conversion', 'seo', 'copywriting']),
+    },
+  ];
+
+  for (const tenant of tenants) {
+    for (const persona of personaData) {
+      await prisma.persona.create({
+        data: {
+          tenantId: tenant.id,
+          personaId: persona.personaId,
+          name: persona.name,
+          description: persona.description,
+          keywords: persona.keywords,
+          enabled: true,
+        },
+      });
+    }
+  }
+
+  console.log('✅ Personas seeded successfully!');
 }
 
 main()

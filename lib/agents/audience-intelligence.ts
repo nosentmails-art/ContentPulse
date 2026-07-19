@@ -256,16 +256,15 @@ function parseJsonArray(value: string | null | undefined): string[] {
 }
 
 function personaKeywords(persona: {
+  personaId: string;
   name: string;
   description: string | null;
-  responsibilities: string | null;
-  desiredContent: string | null;
+  keywords: string;
 }) {
   const sourceTerms = [
     persona.name,
     persona.description || '',
-    ...parseJsonArray(persona.responsibilities),
-    ...parseJsonArray(persona.desiredContent),
+    ...parseJsonArray(persona.keywords),
   ];
 
   return Array.from(
@@ -321,18 +320,24 @@ export async function analyze(
       };
     }
 
-    // Personas are not yet implemented in the schema - skipping persona matching
-    const personas: any[] = [];
+    // Fetch personas from database
+    const personas = await prisma.persona.findMany({
+      where: { 
+        tenantId,
+        enabled: true 
+      }
+    });
+    
     const channelMap = new Map<string, Aggregate>();
     const segmentMap = new Map<string, Aggregate>();
     const personaMap = new Map<string, Aggregate>();
     const demographicMap: Record<string, Map<string, number>> = {};
     const foundAudienceFields = new Set<string>();
 
-    // Skip persona mapping since personas don't exist in schema yet
-    // for (const persona of personas) {
-    //   personaMap.set(persona.personaId, createAggregate(persona.name));
-    // }
+    // Persona matching based on keywords
+  for (const persona of personas) {
+    personaMap.set(persona.personaId, createAggregate(persona.name));
+  }
 
     for (const item of contentItems) {
       const channelAggregate = channelMap.get(item.channel) || createAggregate(item.channel);
@@ -340,15 +345,15 @@ export async function analyze(
       channelMap.set(item.channel, channelAggregate);
 
       const searchText = itemSearchText(item);
-      // Skip persona matching since personas don't exist in schema yet
-      // for (const persona of personas) {
-      //   const keywords = personaKeywords(persona);
-      //   const matched = keywords.length === 0 || keywords.some((keyword) => searchText.includes(keyword));
-      //   if (!matched) continue;
-      //   const personaAggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
-      //   addObservation(personaAggregate, item);
-      //   personaMap.set(persona.personaId, personaAggregate);
-      // }
+      // Persona matching based on keywords
+      for (const persona of personas) {
+        const keywords = personaKeywords(persona);
+        const matched = keywords.length === 0 || keywords.some((keyword) => searchText.includes(keyword));
+        if (!matched) continue;
+        const personaAggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
+        addObservation(personaAggregate, item);
+        personaMap.set(persona.personaId, personaAggregate);
+      }
 
       const segment = getSegmentKey(item);
       const segmentAggregate = segmentMap.get(segment.key) || createAggregate(segment.name);

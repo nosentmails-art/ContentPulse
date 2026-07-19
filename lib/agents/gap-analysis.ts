@@ -68,6 +68,16 @@ export async function analyze(
       ? enabledAttributes 
       : defaultKeywords;
 
+    // Count topic mentions in content titles
+    for (const item of contentItems) {
+      const title = (item.title || "").toLowerCase();
+      for (const keyword of keywords) {
+        if (title.includes(keyword.toLowerCase())) {
+          topicMap.set(keyword, (topicMap.get(keyword) || 0) + 1);
+        }
+      }
+    }
+
     // Calculate coverage percentages
     const totalContent = contentItems.length;
     const topics = Array.from(topicMap.entries())

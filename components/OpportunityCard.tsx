@@ -9,7 +9,7 @@ interface OpportunityCardProps {
   topic: string;
   format: string;
   channel: string;
-  urgency: "HOT" | "WARM" | "EVERGREEN";
+  urgency: string;
   reason: string;
   suggestedTitle: string;
 }
@@ -28,7 +28,7 @@ export function OpportunityCard({
   reason,
   suggestedTitle,
 }: OpportunityCardProps) {
-  const config = urgencyConfig[urgency];
+  const config = urgencyConfig[urgency?.toUpperCase() as keyof typeof urgencyConfig] || urgencyConfig.EVERGREEN;
 
   return (
     <div className="card">

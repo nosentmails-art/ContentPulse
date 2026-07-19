@@ -126,6 +126,7 @@ export default function ReportPage() {
           if (data.agents && Array.isArray(data.agents)) {
             const transformed: any = {
               generated_at: data.generatedAt || new Date().toISOString(),
+              synthesis: data.synthesis,
             };
             for (const agent of data.agents) {
               transformed[agent.type] = {
@@ -202,12 +203,43 @@ export default function ReportPage() {
         </div>
 
 
+        {/* Synthesis */}
+        {reportData?.synthesis && (
+          <div className="card bg-indigo-900/20 border-indigo-500/30">
+            <h2 className="text-2xl font-bold text-white mb-4">Strategic Summary</h2>
+            <p className="text-slate-300 mb-4">{reportData.synthesis.acquisitionStrategy}</p>
+            {reportData.synthesis.nextActions?.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-slate-300 mb-2">Next Actions</h3>
+                <ul className="list-disc list-inside text-slate-300 space-y-1">
+                  {reportData.synthesis.nextActions.map((action: string, i: number) => (
+                    <li key={i}>{action}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {reportData.synthesis.keyMetrics && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {Object.entries(reportData.synthesis.keyMetrics).map(([k, v]: [string, any]) => (
+                  <div key={k} className="bg-slate-900/50 p-3 rounded border border-slate-700">
+                    <p className="text-xs text-slate-400 uppercase">{k.replace(/([A-Z])/g, " $1").trim()}</p>
+                    <p className="text-white font-semibold">{String(v)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Sections */}
         <div className="space-y-8">
           {/* Sentiment Analysis */}
           {reportData?.SENTIMENT_ANALYSIS?.status === "COMPLETED" && (
             <SentimentScoreCard
-              {...reportData?.SENTIMENT_ANALYSIS.data}
+              score={reportData?.SENTIMENT_ANALYSIS?.data?.overallScore}
+              label={reportData?.SENTIMENT_ANALYSIS?.data?.overallLabel}
+              positiveThemes={reportData?.SENTIMENT_ANALYSIS?.data?.positiveThemes || []}
+              negativeThemes={reportData?.SENTIMENT_ANALYSIS?.data?.negativeThemes || []}
             />
           )}
 
@@ -225,6 +257,14 @@ export default function ReportPage() {
 
             </div>
           </div>
+
+          {/* Content Analytics */}
+          <ReportSection
+            agentType="CONTENT_ANALYTICS"
+            title="Content Performance Overview"
+            data={reportData?.CONTENT_ANALYTICS?.data}
+            status={reportData?.CONTENT_ANALYTICS?.status || "PENDING"}
+          />
 
           {/* Audience Intelligence */}
           <ReportSection

@@ -100,13 +100,7 @@ function renderTable(data: Record<string, any>[]) {
             <tr key={idx} className="border-t border-slate-800">
               {keys.map((key) => (
                 <td key={`${idx}-${key}`} className="py-2 px-2">
-                  {typeof row[key] === "number"
-                    ? row[key].toFixed(1)
-                    : typeof row[key] === "boolean"
-                    ? row[key]
-                      ? "Yes"
-                      : "No"
-                    : String(row[key] ?? "")}
+                  {renderValue(row[key])}
                 </td>
               ))}
             </tr>
@@ -149,7 +143,7 @@ function renderValue(value: any, agentType?: string): React.ReactNode {
   }
 
   if (typeof value === "number") {
-    return <span className="text-white font-medium">{value.toFixed(1)}</span>;
+    return <span className="text-white font-medium">{Number.isInteger(value) ? value.toString() : value.toFixed(1)}</span>;
   }
 
   if (typeof value === "boolean") {
@@ -157,15 +151,15 @@ function renderValue(value: any, agentType?: string): React.ReactNode {
   }
 
   if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <p className="text-slate-400">Empty array</p>;
+    }
     // If it's an array of objects, render as table
     if (value.length > 0 && typeof value[0] === "object") {
       return renderTable(value);
     }
-    // If it's an array of strings, render as list
-    if (value.length > 0 && typeof value[0] === "string") {
-      return renderList(value);
-    }
-    return <p className="text-slate-400">Empty array</p>;
+    // Otherwise render as a list (strings, numbers, booleans)
+    return renderList(value.map(String));
   }
 
   // If it's an object, check if it's a matrix (nested objects with numeric values)
@@ -186,7 +180,7 @@ function renderValue(value: any, agentType?: string): React.ReactNode {
         {keys.map((key) => (
           <div key={key}>
             <dt className="text-slate-400 text-sm font-semibold capitalize">
-              {key.split("_").join(" ")}
+              {key.replace(/_/g, " ").replace(/([A-Z])/g, " $1").trim()}
             </dt>
             <dd className="text-white text-sm mt-1">
               {renderValue(value[key], agentType)}
@@ -289,36 +283,7 @@ export function ReportSection({ agentType, title, data, status }: ReportSectionP
     );
   }
 
-  let content: React.ReactNode;
-
-  // Dispatch to agent-specific renderers
-  switch (agentType) {
-    case "AUDIENCE_INTELLIGENCE":
-      content = renderAudienceIntelligence(data);
-      break;
-    case "CHANNEL_CONTENT_INTELLIGENCE":
-      content = renderChannelIntelligence(data);
-      break;
-    case "GAP_ANALYSIS":
-      content = renderGapAnalysis(data);
-      break;
-    case "COMPETITOR_ANALYSIS":
-      content = renderCompetitorAnalysis(data);
-      break;
-    default:
-      // Generic rendering for other agent types
-      content =
-        typeof data === "object" && data !== null && !Array.isArray(data)
-          ? Object.entries(data).map(([key, value]) => (
-              <div key={key}>
-                <h3 className="text-sm font-semibold text-slate-300 mb-2 capitalize">
-                  {key.split("_").join(" ")}
-                </h3>
-                <div className="text-slate-200">{renderValue(value, agentType)}</div>
-              </div>
-            ))
-          : renderValue(data, agentType);
-  }
+  const content = renderValue(data, agentType);
 
   return (
     <div className="card">

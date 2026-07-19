@@ -17,6 +17,23 @@ import { toast } from "sonner";
 
 type AgentStatus = "IDLE" | "RUNNING" | "COMPLETED" | "ERROR";
 
+function extractSummary(resultJson: string | null | undefined): string | null {
+  if (!resultJson) return null;
+  try {
+    const data = JSON.parse(resultJson);
+    return (
+      data.summary ||
+      data.priorityAction ||
+      data.topRecommendation ||
+      data.topInsight ||
+      (data.metrics?.topChannel && `Top channel: ${data.metrics.topChannel}`) ||
+      "Analysis complete"
+    );
+  } catch {
+    return "Analysis complete";
+  }
+}
+
 export default function TenantPage() {
   const params = useParams();
   const tenantSlug = params.tenant as string;
@@ -200,7 +217,7 @@ export default function TenantPage() {
                 enabled: attr.enabled,
               }))}
               lastRun={agent.latestRun?.completedAt ? new Date(agent.latestRun.completedAt).toLocaleString() : null}
-              resultPreview={agent.latestRun?.resultJson ? "Analysis complete" : null}
+              resultPreview={extractSummary(agent.latestRun?.resultJson)}
               detailHref={`/${tenantSlug}/agents/${agent.type.toLowerCase()}`}
               onToggle={() => handleAgentToggle(agent.type)}
               onAttributeToggle={(key) => handleAttributeToggle(agent.type, key)}

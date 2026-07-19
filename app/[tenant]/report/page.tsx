@@ -298,7 +298,13 @@ export default function ReportPage() {
           />
 
           {/* Gap & Opportunity Analysis */}
-          {/* Note: Opportunities are displayed above in the hero section; this shows detailed gap analysis */}
+          <ReportSection
+            agentType="GAP_ANALYSIS"
+            title="Gaps & Opportunity Analysis"
+            data={reportData?.GAP_ANALYSIS?.data}
+            status={reportData?.GAP_ANALYSIS?.status || "PENDING"}
+            source="AI-generated analysis"
+          />
 
           {/* Competitor Analysis */}
           <ReportSection

@@ -12,12 +12,18 @@ export interface GapAnalysisResult {
   success: boolean;
   data?: {
     summary: string;
+    evidenceCoverage: Array<{
+      sourceCategory: 'INTERNAL_SOURCE' | 'EXTERNAL_SOURCE';
+      evidenceType: string;
+      description: string;
+      status: 'AVAILABLE' | 'COMING_SOON';
+    }>;
     strategyGaps: Array<{
       topic: string;
       coverage: number;
+      priority: 'HIGH' | 'MEDIUM' | 'LOW';
       evidenceType: string;
       reason: string;
-      priority: GapPriority;
     }>;
     opportunities: Array<{
       topic: string;
@@ -25,13 +31,7 @@ export interface GapAnalysisResult {
       format: string;
       channel: string;
       urgency: 'HOT' | 'WARM' | 'EVERGREEN';
-      evidenceType: string;
       reason: string;
-    }>;
-    evidenceCoverage: Array<{
-      evidenceType: string;
-      status: 'AVAILABLE' | 'COMING_SOON';
-      description: string;
     }>;
     nextBestAction: string;
   };
@@ -85,6 +85,7 @@ export async function analyze(
           opportunities: [],
           evidenceCoverage: [
             {
+              sourceCategory: 'INTERNAL_SOURCE',
               evidenceType: 'current_content_coverage',
               status: 'COMING_SOON',
               description: 'Upload channel data to compare topic and format coverage.',
@@ -211,16 +212,19 @@ export async function analyze(
         opportunities: enhancedOpportunities,
         evidenceCoverage: [
           {
+            sourceCategory: 'INTERNAL_SOURCE',
             evidenceType: 'current_content_coverage',
             status: 'AVAILABLE',
             description: 'Uses uploaded titles, channels, formats, and engagement metrics.',
           },
           {
+            sourceCategory: 'EXTERNAL_SOURCE',
             evidenceType: 'search_console_or_keyword_demand',
             status: 'COMING_SOON',
             description: 'External search demand is not connected yet, so no keyword volume is inferred.',
           },
           {
+            sourceCategory: 'EXTERNAL_SOURCE',
             evidenceType: 'competitor_public_content',
             status: 'COMING_SOON',
             description: 'Public competitor content analysis can be added later when approved sources are connected.',

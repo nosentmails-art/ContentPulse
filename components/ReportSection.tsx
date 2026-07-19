@@ -7,6 +7,7 @@
  */
 
 import SentimentDashboard from './SentimentDashboard';
+import GapAnalysisCard from './GapAnalysisCard';
 
 interface ReportSectionProps {
   agentType: string;
@@ -445,82 +446,7 @@ function renderChannelIntelligence(data: any): React.ReactNode {
 }
 
 function renderGapAnalysis(data: any): React.ReactNode {
-  return (
-    <div className="space-y-6">
-      {data.summary && (
-        <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-          <p className="text-sm font-semibold text-slate-300 mb-2">Summary</p>
-          <p className="text-white">{data.summary}</p>
-        </div>
-      )}
-
-      {data.evidenceCoverage && data.evidenceCoverage.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Evidence Coverage</h3>
-          {renderTable(data.evidenceCoverage)}
-        </div>
-      )}
-
-      {data.strategyGaps && data.strategyGaps.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Strategy Gaps</h3>
-          <div className="space-y-4">
-            {data.strategyGaps.map((gap: any, idx: number) => (
-              <div key={idx} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <p className="font-semibold text-white">{gap.topic}</p>
-                  <span className="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs font-semibold">
-                    {gap.priority}
-                  </span>
-                </div>
-                <div className="text-sm text-slate-300 space-y-1">
-                  <p>Coverage: <span className="text-white">{gap.coverage}%</span></p>
-                  <p>Evidence: <span className="text-white">{gap.evidenceType}</span></p>
-                  <p className="text-slate-400 italic">{gap.reason}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {data.opportunities && data.opportunities.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">Recommended Opportunities</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {data.opportunities.map((opportunity: any, idx: number) => (
-              <div key={idx} className="p-4 bg-indigo-500/10 rounded-lg border border-indigo-500/30">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <p className="font-semibold text-white">{opportunity.suggestedTitle}</p>
-                  <span className="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs font-semibold">
-                    {opportunity.urgency}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                  <div>
-                    <p className="text-slate-400">Format</p>
-                    <p className="text-white">{opportunity.format}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400">Channel</p>
-                    <p className="text-white">{opportunity.channel}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-300">{opportunity.reason}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {data.nextBestAction && (
-        <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-          <p className="text-sm font-semibold text-green-300 mb-2">Next Best Action</p>
-          <p className="text-white">{data.nextBestAction}</p>
-        </div>
-      )}
-    </div>
-  );
+  return <GapAnalysisCard data={data} />;
 }
 
 function renderCompetitorAnalysis(data: any): React.ReactNode {

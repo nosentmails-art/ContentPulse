@@ -172,8 +172,9 @@ function sortedKeys(map: Map<string, number>, limit = 3): string[] {
 }
 
 function formatRate(engagement: number, impressions: number): string {
-  if (impressions <= 0) return '0.00%';
-  return `${((engagement / impressions) * 100).toFixed(2)}%`;
+  if (impressions <= 0) return '0.0%';
+  const rate = (engagement / impressions) * 100;
+  return `${rate.toFixed(1)}%`;
 }
 
 function confidence(aggregate: Aggregate): 'HIGH' | 'MEDIUM' | 'LOW' {
@@ -340,19 +341,18 @@ export async function analyze(
       };
     }
 
-    const personas = await prisma.audiencePersona.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: 'asc' },
-    });
+    // Personas are not yet implemented in the schema - skipping persona matching
+    const personas: any[] = [];
     const channelMap = new Map<string, Aggregate>();
     const segmentMap = new Map<string, Aggregate>();
     const personaMap = new Map<string, Aggregate>();
     const demographicMap: Record<string, Map<string, number>> = {};
     const foundAudienceFields = new Set<string>();
 
-    for (const persona of personas) {
-      personaMap.set(persona.personaId, createAggregate(persona.name));
-    }
+    // Skip persona mapping since personas don't exist in schema yet
+    // for (const persona of personas) {
+    //   personaMap.set(persona.personaId, createAggregate(persona.name));
+    // }
 
     for (const item of contentItems) {
       const channelAggregate = channelMap.get(item.channel) || createAggregate(item.channel);
@@ -360,14 +360,15 @@ export async function analyze(
       channelMap.set(item.channel, channelAggregate);
 
       const searchText = itemSearchText(item);
-      for (const persona of personas) {
-        const keywords = personaKeywords(persona);
-        const matched = keywords.length === 0 || keywords.some((keyword) => searchText.includes(keyword));
-        if (!matched) continue;
-        const personaAggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
-        addObservation(personaAggregate, item);
-        personaMap.set(persona.personaId, personaAggregate);
-      }
+      // Skip persona matching since personas don't exist in schema yet
+      // for (const persona of personas) {
+      //   const keywords = personaKeywords(persona);
+      //   const matched = keywords.length === 0 || keywords.some((keyword) => searchText.includes(keyword));
+      //   if (!matched) continue;
+      //   const personaAggregate = personaMap.get(persona.personaId) || createAggregate(persona.name);
+      //   addObservation(personaAggregate, item);
+      //   personaMap.set(persona.personaId, personaAggregate);
+      // }
 
       const segment = getSegmentKey(item);
       const segmentAggregate = segmentMap.get(segment.key) || createAggregate(segment.name);

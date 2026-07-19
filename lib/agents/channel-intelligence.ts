@@ -113,8 +113,9 @@ function calculatePerformanceScore(totalContent: number, engagementRate: number,
 }
 
 function formatRate(engagement: number, reach: number): string {
-  if (reach <= 0) return '0.00%';
-  return `${((engagement / reach) * 100).toFixed(2)}%`;
+  if (reach <= 0) return '0.0%';
+  const rate = (engagement / reach) * 100;
+  return `${rate.toFixed(1)}%`;
 }
 
 function buildChannelStats(items: ContentWithMetrics[]): ChannelStats {

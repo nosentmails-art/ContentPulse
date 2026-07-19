@@ -136,7 +136,7 @@ function getMockResult(
       overallScore: 82,
       overallLabel: 'Highly Positive',
       positiveThemes: ['Practical value', 'Clear writing', 'Timely topics'],
-      negativeThemes: ['Wants more examples', 'Too technical at times'],
+      negativeThemes: ['Wants more examples', 'Too technical at times', 'Content too long'],
       topPositiveComment: 'This saved me hours of research - exactly what I needed.',
       topNegativeComment: 'Great concepts but would benefit from more real-world examples.',
       actionableInsight: 'Focus on real-world case studies with concrete before/after metrics.',

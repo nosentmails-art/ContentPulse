@@ -15,9 +15,9 @@ export default function Home() {
       <section className="container-page py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Turn Scattered Content Metrics Into{" "}
+            Transform Content Data Into{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-              Your Next Winning Strategy
+              Winning Strategies
             </span>
           </h1>
 
